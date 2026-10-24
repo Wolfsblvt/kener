@@ -65,10 +65,17 @@ export interface HeartbeatMonitorTypeData {
   secretString: string;
 }
 
+export type GroupMemberRole = "required" | "supporting";
+
 export interface GroupMonitorMember {
   tag: string;
   /** Weight for this monitor. All weights in a group must sum to 1. */
   weight: number;
+  /**
+   * Optional role. Once any member of a group has a role, the group uses role rollup instead of weighted
+   * scores, and members without one count as required. See `RollupGroupStatus`.
+   */
+  role?: GroupMemberRole;
 }
 
 export interface GroupMonitorTypeData extends Record<string, unknown> {

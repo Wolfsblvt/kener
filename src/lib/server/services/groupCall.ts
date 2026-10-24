@@ -1,6 +1,6 @@
 import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 import GC from "../../global-constants.js";
-import type { GroupMonitor, MonitoringResult } from "../types/monitor.js";
+import type { GroupMonitor, GroupMonitorMember, MonitoringResult } from "../types/monitor.js";
 import { GetLastMonitoringValue } from "../cache/setGet.js";
 import { GetLatestMonitoringData } from "../controllers/controller.js";
 
@@ -23,6 +23,44 @@ function scoreToStatus(score: number): string {
   if (score >= 1) return GC.UP;
   if (score > 0) return GC.DEGRADED;
   return GC.DOWN;
+}
+
+/**
+ * Derive a group's status from its members' latest statuses.
+ *
+ * Without roles this is the weighted score above, unchanged. With roles, the group answers "can people use this?":
+ * a required member that is down makes the group down, required maintenance makes it maintenance, and anything
+ * else that is not up makes it degraded. A supporting member can only degrade the group, unless every member is
+ * down or in maintenance. Members without data are left out, as in the weighted path.
+ */
+export function RollupGroupStatus(members: GroupMonitorMember[], statusByTag: Map<string, string>): string {
+  if (!members.some((m) => m.role)) {
+    let weightedScore = 0;
+    let totalWeight = 0;
+    for (const member of members) {
+      const status = statusByTag.get(member.tag);
+      if (status === undefined) continue;
+      weightedScore += member.weight * (STATUS_SCORE[status] ?? 1);
+      totalWeight += member.weight;
+    }
+    // Normalize if weights don't sum to 1 (safety net)
+    if (totalWeight > 0 && totalWeight !== 1) {
+      weightedScore = weightedScore / totalWeight;
+    }
+    return scoreToStatus(weightedScore);
+  }
+
+  const observed = members.filter((m) => statusByTag.has(m.tag));
+  if (observed.length === 0) return GC.DOWN;
+  const statusOf = (m: GroupMonitorMember) => statusByTag.get(m.tag) as string;
+  const required = observed.filter((m) => (m.role ?? "required") === "required");
+
+  if (observed.every((m) => statusOf(m) === GC.DOWN)) return GC.DOWN;
+  if (required.some((m) => statusOf(m) === GC.DOWN)) return GC.DOWN;
+  if (observed.every((m) => statusOf(m) === GC.MAINTENANCE)) return GC.MAINTENANCE;
+  if (required.some((m) => statusOf(m) === GC.MAINTENANCE)) return GC.MAINTENANCE;
+  if (observed.some((m) => statusOf(m) !== GC.UP)) return GC.DEGRADED;
+  return GC.UP;
 }
 
 class GroupCall {
@@ -65,28 +103,8 @@ class GroupCall {
       }
     }
 
-    // --- Status calculation via weighted scores ---
-    // Each status has a normalized score: UP=1, DEGRADED=0.5, DOWN=0
-    // MAINTENANCE members are treated as UP (score 1).
-    // Weighted sum = Σ(weight × score), weights should sum to 1.
-    // Result: 1 → UP, (0,1) → DEGRADED, 0 → DOWN
-    let weightedScore = 0;
-    let totalWeight = 0;
-
-    for (const member of members) {
-      const data = statusMap.get(member.tag);
-      if (!data) continue;
-      const score = STATUS_SCORE[data.status] ?? 1;
-      weightedScore += member.weight * score;
-      totalWeight += member.weight;
-    }
-
-    // Normalize if weights don't sum to 1 (safety net)
-    if (totalWeight > 0 && totalWeight !== 1) {
-      weightedScore = weightedScore / totalWeight;
-    }
-
-    const status = scoreToStatus(weightedScore);
+    const statusByTag = new Map([...statusMap].map(([tag, value]) => [tag, value.status]));
+    const status = RollupGroupStatus(members, statusByTag);
 
     return { status, latency, type: GC.REALTIME };
   }
