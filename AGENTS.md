@@ -1,3 +1,7 @@
+## Wolfsblvt fork
+
+This is the Wolfsblvt fork of Kener, maintained by Wolf Ops. Before changing anything, read [`wolf/README.md`](wolf/README.md): it defines the branch model, the patch series on top of the upstream release, and the vendored product brand bundles. Upstream's instructions below still apply to the code itself.
+
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
 
 ## Available MCP Tools:
