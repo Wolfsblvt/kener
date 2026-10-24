@@ -1,0 +1,7 @@
+{
+  "meaning": "Brand bundles this fork serves at /brand/<id>/. Each pin is the owning repository's exact carrier commit containing brand/bundle/<id>/. Refresh with `node wolf/brand/pull.mjs`; never edit vendor/brand by hand.",
+  "bundles": [
+    { "id": "works", "repository": "Wolfsblvt/wolfsblvt.works", "commit": "69630063e7f7f3af3f3f13eb019a56db6c438efa" },
+    { "id": "diffdevil", "repository": "Wolfsblvt/diffdevil", "commit": "e35927e78ba9a51a8a3f142ee21af0de7f220f4f" }
+  ]
+}

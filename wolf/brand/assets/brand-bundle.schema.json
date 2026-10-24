@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wolfsblvt:brand-bundle:v1",
+  "title": "Wolfsblvt Brand Bundle manifest, schemaVersion 1",
+  "description": "Structural layer of the Brand Bundle Contract. The shared validator executes this schema first and then applies the contract's cross-field rules. Version 1 is closed: every object rejects unknown members.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "bundleSha256", "brand", "source", "assets"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "bundleSha256": { "$ref": "#/$defs/sha256" },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "displayName"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "displayName": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/text" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "exporter"],
+      "properties": {
+        "repository": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9._-]+$" },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "exporter": { "$ref": "#/$defs/sourcePath" }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "reference": { "$ref": "#/$defs/file" },
+        "semantic": { "$ref": "#/$defs/file" },
+        "css": { "$ref": "#/$defs/file" }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "fonts": { "$ref": "#/$defs/file" },
+        "foundation": { "$ref": "#/$defs/file" }
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/font" }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worksSponsor"],
+      "properties": {
+        "worksSponsor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["template", "stylesheet", "behavior"],
+          "properties": {
+            "template": { "$ref": "#/$defs/file" },
+            "stylesheet": { "$ref": "#/$defs/file" },
+            "behavior": { "$ref": "#/$defs/file" }
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/asset" }
+    },
+    "licences": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/licence" }
+    }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1, "pattern": "^\\S(?:.*\\S)?$" },
+    "identifier": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "bundlePath": {
+      "description": "Forward-slash bundle-relative path. Lowercase ASCII segments only, so case-insensitive and Unicode-normalizing filesystems cannot alias two files.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*(?:/[a-z0-9][a-z0-9._-]*)*$"
+    },
+    "sourcePath": {
+      "description": "Path inside source.repository at source.commit, with an optional fragment.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9._-]*(?:/[A-Za-z0-9_][A-Za-z0-9._-]*)*(?:#[A-Za-z0-9._-]+)?$"
+    },
+    "url": { "type": "string", "pattern": "^https://[^\\s/?#]+/[^\\s]*$" },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "byteCount", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/bundlePath" },
+        "byteCount": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "evidence": {
+      "description": "Exactly one carrier: a file delivered in this bundle, a path in the source repository at source.commit, or an external https URL.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bundleFile"],
+          "properties": { "bundleFile": { "$ref": "#/$defs/file" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourcePath"],
+          "properties": { "sourcePath": { "$ref": "#/$defs/sourcePath" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["url"],
+          "properties": { "url": { "$ref": "#/$defs/url" } }
+        }
+      ]
+    },
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "format", "weight", "style", "fallbacks", "licenceId", "source", "file"],
+      "properties": {
+        "family": { "$ref": "#/$defs/text" },
+        "format": { "enum": ["woff2", "woff", "ttf", "otf"] },
+        "weight": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max"],
+          "properties": {
+            "min": { "type": "integer", "minimum": 1, "maximum": 1000 },
+            "max": { "type": "integer", "minimum": 1, "maximum": 1000 }
+          }
+        },
+        "style": { "enum": ["normal", "italic", "oblique"] },
+        "fallbacks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "licenceId": { "$ref": "#/$defs/identifier" },
+        "source": { "$ref": "#/$defs/text" },
+        "file": { "$ref": "#/$defs/file" }
+      }
+    },
+    "licence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "subject", "name", "file"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "subject": { "$ref": "#/$defs/text" },
+        "name": { "$ref": "#/$defs/text" },
+        "source": { "$ref": "#/$defs/text" },
+        "file": { "$ref": "#/$defs/file" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "variants"],
+      "properties": {
+        "role": {
+          "enum": [
+            "mark.primary",
+            "mark.compact",
+            "wordmark",
+            "lockup.default",
+            "lockup.compact",
+            "icon.application",
+            "icon.touch",
+            "icon.maskable",
+            "icon.favicon",
+            "sponsor.banner",
+            "motif.primary",
+            "motion.intro"
+          ]
+        },
+        "label": { "$ref": "#/$defs/text" },
+        "titleCompatible": { "const": true },
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/variant" }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["appearance", "colorMode", "qualifiedBackgrounds", "qualificationEvidence", "representations"],
+      "properties": {
+        "appearance": { "enum": ["universal", "on-light", "on-dark"] },
+        "colorMode": { "enum": ["full-color", "monochrome", "tintable"] },
+        "qualifiedBackgrounds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "enum": ["light", "dark"] }
+        },
+        "qualificationEvidence": { "$ref": "#/$defs/evidence" },
+        "allowedTintTokens": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^--brand-[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "minimumWidthPx": { "type": "integer", "minimum": 1 },
+        "representations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/representation" }
+        }
+      }
+    },
+    "representation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "motion", "file"],
+      "properties": {
+        "format": { "enum": ["svg", "png", "gif", "apng", "ico", "webp", "pdf"] },
+        "motion": { "enum": ["static", "animated"] },
+        "adaptive": { "const": true },
+        "file": { "$ref": "#/$defs/file" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "pixelDensity": { "type": "number", "exclusiveMinimum": 0 },
+        "durationMs": { "type": "integer", "minimum": 1 },
+        "loop": { "enum": ["finite", "infinite"] },
+        "playCount": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

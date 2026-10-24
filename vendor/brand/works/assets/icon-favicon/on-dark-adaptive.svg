@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<style>.o{stroke:#b8661f}.m{stroke:#a8327a}.d{fill:#22171c}@media (prefers-color-scheme:dark){.o{stroke:#eca557}.m{stroke:#db61aa}.d{fill:#f3e8dc}}</style>
+<path class="o" d="M4.6 20.5V13A8 8 0 0 1 12.6 5H17.5" fill="none" stroke-width="3" stroke-linecap="round"/><path class="m" d="M27.4 8.5V15A12.4 12.4 0 0 1 15 27.4H9.5" fill="none" stroke-width="3" stroke-linecap="round"/><circle class="d" cx="17.15" cy="17.35" r="3.1"/></svg>

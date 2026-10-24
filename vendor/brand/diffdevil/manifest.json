@@ -1,0 +1,940 @@
+{
+  "schemaVersion": 1,
+  "brand": {
+    "id": "diffdevil",
+    "displayName": "diffdevil",
+    "description": "The devil is in the diff."
+  },
+  "source": {
+    "repository": "Wolfsblvt/diffdevil",
+    "commit": "6eb2fefd47164d621e8f54b070b0d6d72b4cf0de",
+    "exporter": "tools/brand-export.mjs"
+  },
+  "assets": [
+    {
+      "role": "mark.primary",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#marks"
+          },
+          "minimumWidthPx": 24,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-light.svg",
+                "byteCount": 1506,
+                "sha256": "3eb2d202d00981a1633009519948768d7f221f0a7774daed609c28835cfc289b"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-512x512.png",
+                "byteCount": 8054,
+                "sha256": "aa56c140b144a4862af7028ebd75f354702a8094bcc3a52c2ac99894ef237a76"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-256x256.png",
+                "byteCount": 3847,
+                "sha256": "c7ca3547f98201b5ed15b236ceff680bb68850b1d34ed7425288c426ee8c8de6"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 128,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-128x128.png",
+                "byteCount": 1816,
+                "sha256": "6147f9a1890d9f88495c9b7c83f8f2ab6d98f4acb89f28843ee7bad73d00a6f6"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-64x64.png",
+                "byteCount": 901,
+                "sha256": "5f626f1bd2de4c7a549a61dc92e672d56a48a119a7f5b83e3619ce245e6feabd"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#marks"
+          },
+          "minimumWidthPx": 24,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-dark.svg",
+                "byteCount": 1504,
+                "sha256": "12e01838776a0af82db24c97016acc39d4d0bcd84bdf38c84347577fc6dc9d3e"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-512x512.png",
+                "byteCount": 8045,
+                "sha256": "6ab6228d82e7fdb4be5c099b00a5acd808c240a9194a0b0206301d7522f605a0"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-256x256.png",
+                "byteCount": 3785,
+                "sha256": "afd7783bb3f6c9e6683dd815c97e0abeb5dadf9a003bb3e8a77a7f808181f27a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 128,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-128x128.png",
+                "byteCount": 1757,
+                "sha256": "e57c9759b3d8ec4adee335d6430a689e230a137321deff21e05eb414d5d8cea5"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-64x64.png",
+                "byteCount": 871,
+                "sha256": "232bcbd3ba71bc35d6e9e686710c93b9841eaae8e61368e87ef83f2efe199c3b"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-light",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#marks"
+          },
+          "minimumWidthPx": 24,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-light-monochrome.svg",
+                "byteCount": 1528,
+                "sha256": "e15b7782a1a896434c04fc1d134e20f81e133ec9c91a6cd5b311e84c8c5acf48"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-monochrome-512x512.png",
+                "byteCount": 8869,
+                "sha256": "6603349a103f4fd719aef3d31bf02936a295346923a8799dee47697ceb0f8370"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#marks"
+          },
+          "minimumWidthPx": 24,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-dark-monochrome.svg",
+                "byteCount": 1526,
+                "sha256": "91989324c55e317d6460af8fb3a0500799ab9c019405ad34431d1f907115e7d4"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-monochrome-512x512.png",
+                "byteCount": 8936,
+                "sha256": "c2423a9f76143ab8e767571621b4ddecfc8b21ba782b76e88872f058f28428ab"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "mark.compact",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#marks"
+          },
+          "minimumWidthPx": 12,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-compact/on-light.svg",
+                "byteCount": 1442,
+                "sha256": "7af12f32e245170386ae4a26bcb7c909574bb81139df3f04e5eecdf4c1629ed2"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-compact/on-light-64x64.png",
+                "byteCount": 1020,
+                "sha256": "7f9f51ab9696b3e086cd25c9de249dfb894d6960f3eb00a572c3881a7e91f89b"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-compact/on-light-32x32.png",
+                "byteCount": 627,
+                "sha256": "d0daba7b9e5602915fe6358c337a0663eaa5701e98b6f29bdc2e1719c646d2a3"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-compact/on-light-16x16.png",
+                "byteCount": 434,
+                "sha256": "e57bb45e6358884c59095212b60374a0ea7608a24b9b149aa83fb193764c9512"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#marks"
+          },
+          "minimumWidthPx": 12,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-compact/on-dark.svg",
+                "byteCount": 1440,
+                "sha256": "81a88b47c1e59b544a737743572b437d510c3158e13ba6563d94096de00045b4"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-compact/on-dark-64x64.png",
+                "byteCount": 991,
+                "sha256": "4e7fdf08f30bf687f7598471939f4b94f706993b330a4f9e582dfc33ee6052c3"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-compact/on-dark-32x32.png",
+                "byteCount": 612,
+                "sha256": "3a137460737ad90de4c25c28826a46c1ee228b27b0696fd6f3b2c0c6a805681a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-compact/on-dark-16x16.png",
+                "byteCount": 430,
+                "sha256": "c0e24d4ea036501e0c23b16d271788d6e3d2d7e46736e52166f51efaba73cb18"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "wordmark",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#wordmark-and-lockups"
+          },
+          "minimumWidthPx": 72,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/wordmark/on-light.svg",
+                "byteCount": 1932,
+                "sha256": "aaea362e82be63037f37bbc545a019339d85fbeb63700d2086b73f64024c516e"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 255,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/wordmark/on-light-1200x255.png",
+                "byteCount": 18301,
+                "sha256": "b39c2773704e5852e8c83ee0d0fa61cbde6704eb0ed694d1ae03f90619e0e5cb"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/wordmark/on-light-600x128.png",
+                "byteCount": 8086,
+                "sha256": "aaec98d1a480882aa048af09ac0251c68971d018b7335aa812bc2a02cf4795ae"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#wordmark-and-lockups"
+          },
+          "minimumWidthPx": 72,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/wordmark/on-dark.svg",
+                "byteCount": 1932,
+                "sha256": "329b746ec8099b18b891b6b7ed04de5427a17354382f8ce0046cee465f402ef8"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 255,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/wordmark/on-dark-1200x255.png",
+                "byteCount": 18572,
+                "sha256": "e0426d16bfec5e24f3d8e9e5f2dae8fced7f4cdd8eea3b7b547bf509f7ee7b47"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/wordmark/on-dark-600x128.png",
+                "byteCount": 8156,
+                "sha256": "f3c5b3e5e5ebacef25b6c0a944c30d4017a36ffba08207ffc04a5431fecaf53b"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "lockup.default",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#wordmark-and-lockups"
+          },
+          "minimumWidthPx": 120,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-default/on-light.svg",
+                "byteCount": 3397,
+                "sha256": "4e857b1ba0d926a3355a97351300b2237d9b10cdedf0c3177a2c3f631c993e8f"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 297,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-1200x297.png",
+                "byteCount": 17332,
+                "sha256": "0c7a93eb903b453cf3f2c6e64bc0d61de4860d9659fa1fffeefa15b47643e463"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 149,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-600x149.png",
+                "byteCount": 8234,
+                "sha256": "e7056823d94f465e7ff9c0812e20b1719b34dba51350d027afac7369205724fb"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#wordmark-and-lockups"
+          },
+          "minimumWidthPx": 120,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-default/on-dark.svg",
+                "byteCount": 3395,
+                "sha256": "e2f2a2d1219f2b22f9cd03093f2127e0fcbd5b25fd2ca2e0495963eacad20bd2"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 297,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-1200x297.png",
+                "byteCount": 18002,
+                "sha256": "660f002c1b7fd26b917d365d2381402c33e74710f357832358b533873462bd53"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 149,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-600x149.png",
+                "byteCount": 8236,
+                "sha256": "6d8d654960d812f9b37bc5b6e9b173d2c1784ae532e42c66ef1b60404a1eacf7"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "lockup.compact",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#wordmark-and-lockups"
+          },
+          "minimumWidthPx": 64,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-compact/on-light.svg",
+                "byteCount": 3441,
+                "sha256": "0ad83878018a76604c02fb325aea195a12598310b89a94873b86217a268dd66d"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 508,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-light-600x508.png",
+                "byteCount": 14235,
+                "sha256": "9d70534cc4d483ad57546036171a9455197882a081359c36a9bef58da8e8419c"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 300,
+              "height": 254,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-light-300x254.png",
+                "byteCount": 6832,
+                "sha256": "870c04f20c225d44b670e539be3636df8ec5337abfe6eb5771895dc7c620b986"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#wordmark-and-lockups"
+          },
+          "minimumWidthPx": 64,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-compact/on-dark.svg",
+                "byteCount": 3439,
+                "sha256": "72559dba8bc1ab9ea5d2b884715d3975db063ef668d80b2931f87dceb2c9b235"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 508,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-600x508.png",
+                "byteCount": 14152,
+                "sha256": "5ccd926d89b349eac31b5d3c7d5a53c85a19b91c2c7cc2e1c898b78ac3a2eee8"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 300,
+              "height": 254,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-300x254.png",
+                "byteCount": 6758,
+                "sha256": "4bfdf4f6e7adbcb385a4e7f1351595b6934423c621de61a3dfca2974ce663061"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.favicon",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#favicon"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-favicon/on-light.svg",
+                "byteCount": 1442,
+                "sha256": "25f73601bb921ecc289c9c5c3e25b1298687f5ddae0f1c3e6f28c3a298b52d06"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-64x64.png",
+                "byteCount": 1020,
+                "sha256": "7f9f51ab9696b3e086cd25c9de249dfb894d6960f3eb00a572c3881a7e91f89b"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 48,
+              "height": 48,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-48x48.png",
+                "byteCount": 883,
+                "sha256": "a4a7ec858f693b953d1d18314921aa6628986fd05f3ffa85c9d3f069c4400e86"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-32x32.png",
+                "byteCount": 627,
+                "sha256": "d0daba7b9e5602915fe6358c337a0663eaa5701e98b6f29bdc2e1719c646d2a3"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-16x16.png",
+                "byteCount": 434,
+                "sha256": "e57bb45e6358884c59095212b60374a0ea7608a24b9b149aa83fb193764c9512"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/icon-favicon/on-light-adaptive.svg",
+                "byteCount": 2824,
+                "sha256": "800aeb828dd7426a5821e424fa9d9cf2c7ccb3cccc55e82fb5f6c52102c761e1"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#favicon"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-favicon/on-dark.svg",
+                "byteCount": 1440,
+                "sha256": "852ee393ef9fd6674c7ce27c5f31f7cdb5dc842d489ba07877f3b1a78693a715"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-64x64.png",
+                "byteCount": 991,
+                "sha256": "4e7fdf08f30bf687f7598471939f4b94f706993b330a4f9e582dfc33ee6052c3"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 48,
+              "height": 48,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-48x48.png",
+                "byteCount": 867,
+                "sha256": "6e88941a5484ec35197d396c445019d40e759cd820f616a433b73918703b9939"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-32x32.png",
+                "byteCount": 612,
+                "sha256": "3a137460737ad90de4c25c28826a46c1ee228b27b0696fd6f3b2c0c6a805681a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-16x16.png",
+                "byteCount": 430,
+                "sha256": "c0e24d4ea036501e0c23b16d271788d6e3d2d7e46736e52166f51efaba73cb18"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-adaptive.svg",
+                "byteCount": 2824,
+                "sha256": "800aeb828dd7426a5821e424fa9d9cf2c7ccb3cccc55e82fb5f6c52102c761e1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.application",
+      "variants": [
+        {
+          "appearance": "universal",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#application-tiles"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-application/universal.svg",
+                "byteCount": 1675,
+                "sha256": "7f8054bdd96c1db09e8aa07760195627fc3fe501fb8eefde0825be8e14378cd3"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-application/universal-512x512.png",
+                "byteCount": 6606,
+                "sha256": "e03cc4d1ce5952ff1ec9371cbf4775ec22658c1a2b264900eb05cefa4c3a9df0"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 192,
+              "height": 192,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-application/universal-192x192.png",
+                "byteCount": 2091,
+                "sha256": "e3b03d665fe0dd74bfbfb6632dda1c888ee7cfdf22d5d6e355a7a9761ab4d65e"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.touch",
+      "variants": [
+        {
+          "appearance": "universal",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#application-tiles"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-touch/universal.svg",
+                "byteCount": 1663,
+                "sha256": "1b4651bb9ad281ceb09d7f8ef7a4acaff86d1d07633720a389aa5cbce3c725d5"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 180,
+              "height": 180,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-touch/universal-180x180.png",
+                "byteCount": 1987,
+                "sha256": "eb28f22f2bca5eb29ecb1bb2bce2ea4ca5a87f18013e3a74925b01eab2d236a7"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.maskable",
+      "variants": [
+        {
+          "appearance": "universal",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md#application-tiles"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-maskable/universal.svg",
+                "byteCount": 1669,
+                "sha256": "4cee29bbb90b54d940772c5b32b0ab6ab70d2e1cceb581a07973133936d26e1c"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-maskable/universal-512x512.png",
+                "byteCount": 6606,
+                "sha256": "e03cc4d1ce5952ff1ec9371cbf4775ec22658c1a2b264900eb05cefa4c3a9df0"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "bundleSha256": "a5fb19221adbf34ffb3a06139064d197eaf3832472cdfef0618b3249033f6f21"
+}
