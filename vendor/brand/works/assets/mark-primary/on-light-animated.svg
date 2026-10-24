@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Wolfsblvt Works" class="wk">
+<style>.wk{--dim:0.14;--sweep:2.2s;--ws:0.19s;--wl:0.26s;--corner:0.7s;--stagger:0.38s;--after:1.15s}
+.wk .dr,.wk .hw,.wk .ul{stroke-dasharray:1 2;stroke-dashoffset:1.001}
+.wk .dr{animation:wk-draw var(--corner) cubic-bezier(.55,0,.2,1) forwards;animation-delay:calc(var(--i,0) * var(--stagger) + .05s)}
+.wk .dot{transform-box:fill-box;transform-origin:50% 50%;animation:wk-pop .5s cubic-bezier(.3,1.9,.5,1) both calc(var(--after) - .05s)}
+.wk .name-base,.wk .art-base{animation:wk-holddim var(--sweep) linear both var(--after)}
+.wk .art-glow{animation:wk-glowup var(--sweep) ease-in both var(--after)}
+.wk .wipe{animation:wk-wipein var(--sweep) cubic-bezier(.45,.05,.3,1) both var(--after)}
+.wk .band{animation:wk-band var(--sweep) cubic-bezier(.45,.05,.3,1) both var(--after)}
+.wk .hw{animation:wk-draw var(--wl) cubic-bezier(.4,0,.6,1) forwards;animation-delay:calc(var(--after) + var(--i) * var(--ws))}
+.wk .ul{animation:wk-draw .36s cubic-bezier(.3,0,.2,1) forwards;animation-delay:calc(var(--after) + 5 * var(--ws) + .04s)}
+@keyframes wk-draw{to{stroke-dashoffset:0}}
+@keyframes wk-pop{0%{transform:scale(0)}100%{transform:none}}
+@keyframes wk-holddim{0%,99.9%{opacity:var(--dim)}100%{opacity:1}}
+@keyframes wk-glowup{from{opacity:calc(var(--dim) * .25)}}
+@keyframes wk-wipein{from{transform:translateX(calc(-1 * var(--travel)))}to{transform:none}}
+@keyframes wk-band{from{transform:none}to{transform:translateX(var(--travel))}}
+@media (prefers-reduced-motion:reduce){.wk *{animation:none!important}.wk .dr,.wk .hw,.wk .ul{stroke-dashoffset:0}}</style><g transform="translate(0 0) scale(1)"><path class="dr" pathLength="1" d="M4.6 20.5V13A8 8 0 0 1 12.6 5H17.5" fill="none" stroke="#b8661f" stroke-width="3" stroke-linecap="round"/></g><g transform="translate(0 0) scale(1)"><path class="dr" pathLength="1" style="--i:1" d="M27.4 8.5V15A12.4 12.4 0 0 1 15 27.4H9.5" fill="none" stroke="#a8327a" stroke-width="3" stroke-linecap="round"/></g><circle class="dot" cx="17.15" cy="17.35" r="3.1" fill="#22171c"/></svg>

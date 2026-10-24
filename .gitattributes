@@ -1,1 +1,3 @@
 * text=auto eol=lf
+# Wolfsblvt fork: vendored brand bundles must keep their exact bytes (Brand Bundle Contract).
+vendor/brand/** -text -filter -ident -working-tree-encoding

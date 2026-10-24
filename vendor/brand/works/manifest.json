@@ -1,0 +1,1663 @@
+{
+  "schemaVersion": 1,
+  "brand": {
+    "id": "works",
+    "displayName": "Wolfsblvt Works"
+  },
+  "source": {
+    "repository": "Wolfsblvt/wolfsblvt.works",
+    "commit": "97cbf177df1045d14e4e91b06c305c250d8e3186",
+    "exporter": "scripts/export-brand.mjs"
+  },
+  "tokens": {
+    "reference": {
+      "path": "tokens/reference.json",
+      "byteCount": 181,
+      "sha256": "e04396a11955c5630be6a97625ae07269f651708c947e6584ce0609c4e2054cd"
+    },
+    "semantic": {
+      "path": "tokens/semantic.json",
+      "byteCount": 591,
+      "sha256": "9600c7d91ec7f0154cfac85217b09d0c885936f6377f4b02b268e102978463b8"
+    },
+    "css": {
+      "path": "css/tokens.css",
+      "byteCount": 629,
+      "sha256": "1430f6d40a271952ad542df0f86664e93f86f7815d959211fe9227e4cbfaaad8"
+    }
+  },
+  "styles": {
+    "foundation": {
+      "path": "css/foundation.css",
+      "byteCount": 287,
+      "sha256": "bdab29005a591f88b915052cd685f169d6d17063c541bff9f81694e14e64cfa2"
+    },
+    "fonts": {
+      "path": "css/fonts.css",
+      "byteCount": 2148,
+      "sha256": "8a4278d88a58a5208ac0e129c716d27b5ba53c0fe6ffdc603b2e44a019051170"
+    }
+  },
+  "fonts": [
+    {
+      "family": "Works Literata",
+      "format": "woff2",
+      "weight": {
+        "min": 200,
+        "max": 900
+      },
+      "style": "normal",
+      "fallbacks": [
+        "Georgia",
+        "serif"
+      ],
+      "licenceId": "literata-ofl",
+      "source": "@fontsource-variable/literata@5.3.0",
+      "file": {
+        "path": "fonts/literata-latin-ext-opsz-normal.woff2",
+        "byteCount": 89668,
+        "sha256": "1160835f4cdae6a86572ed501c13b62b341480cc7c13fc88ba0c21efdf1fcd73"
+      }
+    },
+    {
+      "family": "Works Literata",
+      "format": "woff2",
+      "weight": {
+        "min": 200,
+        "max": 900
+      },
+      "style": "normal",
+      "fallbacks": [
+        "Georgia",
+        "serif"
+      ],
+      "licenceId": "literata-ofl",
+      "source": "@fontsource-variable/literata@5.3.0",
+      "file": {
+        "path": "fonts/literata-latin-opsz-normal.woff2",
+        "byteCount": 110080,
+        "sha256": "29de894c768689feef6ab4ef274a9a16d19bfc5b0c3cbfcdac80ef220816210c"
+      }
+    },
+    {
+      "family": "Works Albert Sans",
+      "format": "woff2",
+      "weight": {
+        "min": 100,
+        "max": 900
+      },
+      "style": "normal",
+      "fallbacks": [
+        "system-ui",
+        "sans-serif"
+      ],
+      "licenceId": "albert-sans-ofl",
+      "source": "@fontsource-variable/albert-sans@5.3.0",
+      "file": {
+        "path": "fonts/albert-sans-latin-ext-wght-normal.woff2",
+        "byteCount": 23372,
+        "sha256": "78b26c5d5d82248eb13ceeb4e6598b1e4248851f3c8622b12d57571539486816"
+      }
+    },
+    {
+      "family": "Works Albert Sans",
+      "format": "woff2",
+      "weight": {
+        "min": 100,
+        "max": 900
+      },
+      "style": "normal",
+      "fallbacks": [
+        "system-ui",
+        "sans-serif"
+      ],
+      "licenceId": "albert-sans-ofl",
+      "source": "@fontsource-variable/albert-sans@5.3.0",
+      "file": {
+        "path": "fonts/albert-sans-latin-wght-normal.woff2",
+        "byteCount": 32020,
+        "sha256": "c2fb6fda415c7bf5926c15aa98f759da45cdc5ac4ac6925a72a84db4eb3862a3"
+      }
+    },
+    {
+      "family": "Works Shantell Sans",
+      "format": "woff2",
+      "weight": {
+        "min": 400,
+        "max": 400
+      },
+      "style": "normal",
+      "fallbacks": [
+        "cursive"
+      ],
+      "licenceId": "shantell-sans-ofl",
+      "source": "@fontsource/shantell-sans@5.3.0",
+      "file": {
+        "path": "fonts/shantell-sans-latin-ext-400-normal.woff2",
+        "byteCount": 20868,
+        "sha256": "b4320e058b77710f717b221603523ccc7d5b9b8eeb3b496e6f1a28e87d9071e5"
+      }
+    },
+    {
+      "family": "Works Shantell Sans",
+      "format": "woff2",
+      "weight": {
+        "min": 400,
+        "max": 400
+      },
+      "style": "normal",
+      "fallbacks": [
+        "cursive"
+      ],
+      "licenceId": "shantell-sans-ofl",
+      "source": "@fontsource/shantell-sans@5.3.0",
+      "file": {
+        "path": "fonts/shantell-sans-latin-400-normal.woff2",
+        "byteCount": 47168,
+        "sha256": "a8c243d16aee38b5d106791343c95e5e77d9ae7f5761d7d432de88e2904fa11f"
+      }
+    }
+  ],
+  "licences": [
+    {
+      "id": "literata-ofl",
+      "subject": "Works Literata",
+      "name": "SIL Open Font License 1.1",
+      "source": "@fontsource-variable/literata@5.3.0",
+      "file": {
+        "path": "licences/literata-ofl.txt",
+        "byteCount": 4506,
+        "sha256": "9895ebc015226accf416b758ac1ca02a2fb4f83a89d316791ef697c3dc0852aa"
+      }
+    },
+    {
+      "id": "albert-sans-ofl",
+      "subject": "Works Albert Sans",
+      "name": "SIL Open Font License 1.1",
+      "source": "@fontsource-variable/albert-sans@5.3.0",
+      "file": {
+        "path": "licences/albert-sans-ofl.txt",
+        "byteCount": 4503,
+        "sha256": "0f39abdc3bf858f48853e1e63f1124c9660c8cd8b77d2c9a641b30bcd53f8c64"
+      }
+    },
+    {
+      "id": "shantell-sans-ofl",
+      "subject": "Works Shantell Sans",
+      "name": "SIL Open Font License 1.1",
+      "source": "@fontsource/shantell-sans@5.3.0",
+      "file": {
+        "path": "licences/shantell-sans-ofl.txt",
+        "byteCount": 4536,
+        "sha256": "cde8ad5bfbaa0f4b916daff2b107d45dd7a84706c627fd3f669f6cc2af563843"
+      }
+    },
+    {
+      "id": "works-artwork",
+      "subject": "Wolfsblvt Works identity artwork",
+      "name": "All rights reserved",
+      "file": {
+        "path": "licences/works-artwork.txt",
+        "byteCount": 203,
+        "sha256": "a290b0735a3eba6a5bfc950860b2874be670808e6e2fa3014081c0b47e12beac"
+      }
+    },
+    {
+      "id": "agpl-3",
+      "subject": "Shared Works sponsor component and foundation code",
+      "name": "AGPL-3.0-only",
+      "file": {
+        "path": "licences/agpl-3.txt",
+        "byteCount": 726,
+        "sha256": "4222965d1553dc19ed1f478e806c5eed87d15cbfeb701100067531ef35f0e4e0"
+      }
+    }
+  ],
+  "assets": [
+    {
+      "role": "mark.primary",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-light.svg",
+                "byteCount": 601,
+                "sha256": "d2d19dcb15020d114e99bc85b1cb3bfc27581f0bf8304df620e89b70d0f51185"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1024,
+              "height": 1024,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-1024x1024.png",
+                "byteCount": 27465,
+                "sha256": "7d9380be6a0b1158c9fc99700bbafdf322626d9a920a90d8e4bacc6f2ab02f01"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 128,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-128x128.png",
+                "byteCount": 2240,
+                "sha256": "6700db703bbc5284ec812397f68b7a6bf5772a478e0b618856cd1906a1266bbe"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-16x16.png",
+                "byteCount": 399,
+                "sha256": "6be38b9fa32c4b7814fae97f017281da47d24a6f9e4402b5a00376752632e529"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-256x256.png",
+                "byteCount": 4315,
+                "sha256": "4e4e94311095493d369fd0dc5555cb76d82a16b40c7c42cd20640e0122de320a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-32x32.png",
+                "byteCount": 701,
+                "sha256": "fc6f5b0f948d93d6153a2c2877d5ffcfb0a6410718b16f3cdbe757cfde258960"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 48,
+              "height": 48,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-48x48.png",
+                "byteCount": 961,
+                "sha256": "fe768aca8a5fd5237ee0973829a6b3e31f23f9d45fe33287ce6c099146243458"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-512x512.png",
+                "byteCount": 13185,
+                "sha256": "84319b342b7d9b188bdc40d24ac4d916df96684f4b2931bc1e785d7b8e75e456"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-64x64.png",
+                "byteCount": 1199,
+                "sha256": "dbff17b08d5015f2f4995e9ea699f2af44b3fdad2f78863c20707ffb6b21376e"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/mark-primary/on-light-adaptive.svg",
+                "byteCount": 1297,
+                "sha256": "3b22a33c9627636c740f2af653e852a01da7f9d79d064f1e68adddceaa1294dd"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "animated",
+              "durationMs": 2300,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-animated.svg",
+                "byteCount": 2170,
+                "sha256": "22eab04f876068d917dd542e6d9cdeb00fe2e07c8d6ba222a374322532a1e98e"
+              }
+            },
+            {
+              "format": "gif",
+              "motion": "animated",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "durationMs": 2300,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-animated-256x256.gif",
+                "byteCount": 29646,
+                "sha256": "19e6051ac9a1c8ec4513ed60a1a17e8ff57b5d70a060dcca8036cb4dc124bcad"
+              }
+            },
+            {
+              "format": "apng",
+              "motion": "animated",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "durationMs": 2300,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-animated-256x256.apng",
+                "byteCount": 53483,
+                "sha256": "fd9b298f882423ff0cb197337f9f0bdf3226f64010687469c987a333cf460664"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-dark.svg",
+                "byteCount": 601,
+                "sha256": "c43da97f60cae098aac48720b57f4acaea76f30a38c593aa95db5bdf79ff30e8"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1024,
+              "height": 1024,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-1024x1024.png",
+                "byteCount": 27624,
+                "sha256": "3ab5c740cd4428a0d6675627f68104468b5c1702b52f070d0cfc6122bb23de56"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 128,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-128x128.png",
+                "byteCount": 2242,
+                "sha256": "ec3e4dae31a87a6f3935edab6c94ec1bc58bb21ddd1e1f13fd89ef06b3a8ffbc"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-16x16.png",
+                "byteCount": 406,
+                "sha256": "625b260f8cf9fddda298e77f336fb253024d024940b77fc32ad961d62bc2e489"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-256x256.png",
+                "byteCount": 4392,
+                "sha256": "26fe73dc89e33f866bfb6e8584c22dd25c06079fbe9c3fcc8d4ab17323ba3912"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-32x32.png",
+                "byteCount": 702,
+                "sha256": "94955808ab962431c5cf9ca0fc47ed28a8de9b4014df6a36c479603c9f2ba44d"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 48,
+              "height": 48,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-48x48.png",
+                "byteCount": 943,
+                "sha256": "b600209faaee0870d98fb0293d64e1b250d686771d4f8dce45983e6bf5eb9b58"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-512x512.png",
+                "byteCount": 13243,
+                "sha256": "b279520861cba1fbb2eb2244590ab62e0bcbb383588fe35bfe515a3270ee0ca4"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-64x64.png",
+                "byteCount": 1203,
+                "sha256": "ca4fa07063edfb803a2fc6a24efee2df29aaebf4232df1bcb39dffec19ad5ec3"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/mark-primary/on-dark-adaptive.svg",
+                "byteCount": 1297,
+                "sha256": "3b22a33c9627636c740f2af653e852a01da7f9d79d064f1e68adddceaa1294dd"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "animated",
+              "durationMs": 2300,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-animated.svg",
+                "byteCount": 2170,
+                "sha256": "f4c6e47b163bbdcae5326dddcd634fba74070cd23d711a71ec0df7c0d6b36d54"
+              }
+            },
+            {
+              "format": "gif",
+              "motion": "animated",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "durationMs": 2300,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-animated-256x256.gif",
+                "byteCount": 29085,
+                "sha256": "7be93a2611d96b75e0b878e344069bbd97bae67a8940b3a323de92fdc2e4ac10"
+              }
+            },
+            {
+              "format": "apng",
+              "motion": "animated",
+              "width": 256,
+              "height": 256,
+              "pixelDensity": 1,
+              "durationMs": 2300,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-animated-256x256.apng",
+                "byteCount": 54478,
+                "sha256": "330f43464133579a4a9e744aa9b18c295a9c677401b51007845927e5e9abd209"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-light",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-light-monochrome.svg",
+                "byteCount": 604,
+                "sha256": "cf3f0d2ed5d31b1d3aaa088d33c2283805890b1ddf3be0171e98ef3ef510d95a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-light-monochrome-512x512.png",
+                "byteCount": 9288,
+                "sha256": "0927ec40cb1b0da32549ee3546bb367b2b13ae0518a197bf6f31cda6d81af12b"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/mark-primary/on-dark-monochrome.svg",
+                "byteCount": 604,
+                "sha256": "4944579957d1e8f3b90278ca752158f318c5698bf33250e35159c6fe87ad1fe0"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/mark-primary/on-dark-monochrome-512x512.png",
+                "byteCount": 10207,
+                "sha256": "a3fc9a3d5dfce3a8d0749b604182fd894b276d3494ab3ece20b97b76d60a0bc2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "lockup.default",
+      "titleCompatible": true,
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 184,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-default/on-light.svg",
+                "byteCount": 6849,
+                "sha256": "b1642daf6bbfbd5ddab525f6dac0b549218a118393b8f3fc4ad979fb9bc11400"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-1200x261.png",
+                "byteCount": 33885,
+                "sha256": "8ae2ee38a52ff7691f47b2e6190805d2da47b6a17f62b0b30aa4bc39e1db1995"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 2400,
+              "height": 522,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-2400x522.png",
+                "byteCount": 74520,
+                "sha256": "823788f9f5f9d2e7e198a75c3bb339e091f13260b0713715478065ecdad444e6"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 130,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-600x130.png",
+                "byteCount": 10841,
+                "sha256": "121f4d828dbd5146cf1cdb35bf46abf25609a38e5e571591381a1b1648bbfaa5"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/lockup-default/on-light-adaptive.svg",
+                "byteCount": 13773,
+                "sha256": "9b52cc33533442a6501308be8a0bae1a65e643ce57328113f5a755e0a5998966"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "animated",
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-animated.svg",
+                "byteCount": 9715,
+                "sha256": "11fbb258c96ac5929dc44d4f70b86689ea9d3c97e809a3cdaf13d1f104de32fc"
+              }
+            },
+            {
+              "format": "gif",
+              "motion": "animated",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-animated-1200x261.gif",
+                "byteCount": 501551,
+                "sha256": "1fee889d4dcdd74e3621a30e8a4c8b436fdaa6cb177e1275d6c7702f2acbad0f"
+              }
+            },
+            {
+              "format": "apng",
+              "motion": "animated",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-animated-1200x261.apng",
+                "byteCount": 1582878,
+                "sha256": "b54639c8f97a3e71b9f608bc084d2c3e3a43bca80e12113f77a72135df4f6411"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 184,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-default/on-dark.svg",
+                "byteCount": 6847,
+                "sha256": "5aaeb1d82ace3b45d2b75a4ad9cd19342a30aaf756ded9acbf0b426cb1e41591"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-1200x261.png",
+                "byteCount": 33981,
+                "sha256": "e09d542190df42f22097f3cab2e334627574ba7e239ca54982d3805f859f65b1"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 2400,
+              "height": 522,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-2400x522.png",
+                "byteCount": 74597,
+                "sha256": "52d93f8429f580bdc50be3e80a0ded0514fab13357c2b916051113504bbef94a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 130,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-600x130.png",
+                "byteCount": 10860,
+                "sha256": "45e5ea364eee65b599e66fd46a6391cbae7b9e230560aed8176c8759247abe6f"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/lockup-default/on-dark-adaptive.svg",
+                "byteCount": 13773,
+                "sha256": "9b52cc33533442a6501308be8a0bae1a65e643ce57328113f5a755e0a5998966"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "animated",
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-animated.svg",
+                "byteCount": 9699,
+                "sha256": "9fd4e7eab041b08d4657a2fc9732c67b631d1452285137b2b97b9e4a2d8a3fb9"
+              }
+            },
+            {
+              "format": "gif",
+              "motion": "animated",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-animated-1200x261.gif",
+                "byteCount": 532412,
+                "sha256": "5b7202484fbdb666433ec99607b9cb7a725c1a30a96e75752525689bce41a144"
+              }
+            },
+            {
+              "format": "apng",
+              "motion": "animated",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-animated-1200x261.apng",
+                "byteCount": 1708644,
+                "sha256": "37fddc12c13751082c26ec40ccc9b65460156d981d6425752b6c924ad4a22d09"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-light",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 184,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-default/on-light-monochrome.svg",
+                "byteCount": 6835,
+                "sha256": "b187a342c4ebcca95ac420494e12ed07c42b103403a3db867e006cd2cabe8019"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-light-monochrome-1200x261.png",
+                "byteCount": 23824,
+                "sha256": "7c8e5ff5779d3b0dcfdfa5cd638339501748a3686dd7cd44737d15024a6a4128"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 184,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-default/on-dark-monochrome.svg",
+                "byteCount": 6835,
+                "sha256": "bb9b9f8674afb7babf3a256ab8d70345310b1d609c901f8d5ed91dc924c262a8"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1200,
+              "height": 261,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-default/on-dark-monochrome-1200x261.png",
+                "byteCount": 25795,
+                "sha256": "3670affa65f2c474f978bd41583bf450346e987516a17db096fd9de7b1f48c98"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "lockup.compact",
+      "titleCompatible": true,
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 110,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-compact/on-light.svg",
+                "byteCount": 6853,
+                "sha256": "09e851afd7b46bcec0ad989247627e739c69df92f26e4f3b29127e1e4624356a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 558,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-light-558x128.png",
+                "byteCount": 10866,
+                "sha256": "87bae580469befc15d5e8415e53ec60527480e7a132b6ffa052dddb25b1a3fea"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 140,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-light-140x32.png",
+                "byteCount": 2668,
+                "sha256": "704db52bf62f10d7a8f33eac5defe9a0be86a5bd5f1352a7ae1ccdd7132b7b84"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 279,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-light-279x64.png",
+                "byteCount": 5436,
+                "sha256": "7801b12d194ee35a711f0d8676c8410aec69b6ad1cbcc379c8f8f621b0e5c609"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/lockup-compact/on-light-adaptive.svg",
+                "byteCount": 13781,
+                "sha256": "64565dfda57943223236394e029174822acc3d3cf4473f536b5271116db935f4"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 110,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-compact/on-dark.svg",
+                "byteCount": 6851,
+                "sha256": "2c92a08479680f8530b332fec1a1d639fe173a41093c5abe44dad872927abe93"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 558,
+              "height": 128,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-558x128.png",
+                "byteCount": 10770,
+                "sha256": "d192fa8d7cf7fe832bbe4de46e2b855067d171c761f4d95563cf208157da5882"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 140,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-140x32.png",
+                "byteCount": 2655,
+                "sha256": "18466dda184a8ca0ebab7bd9e5ba875f31325e8ad31a3be3dd2970ae4f3b8e75"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 279,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-279x64.png",
+                "byteCount": 5442,
+                "sha256": "17f294e3a86b35c595fd231e1cd9fa20c607a06b3d03c0922de525ed4b82cfbd"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-adaptive.svg",
+                "byteCount": 13781,
+                "sha256": "64565dfda57943223236394e029174822acc3d3cf4473f536b5271116db935f4"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-light",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "light"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 110,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-compact/on-light-monochrome.svg",
+                "byteCount": 6839,
+                "sha256": "065a9fb0d7665d8fb0f76e4b0bbd9225110444c7edf8ff8983934b20f411a04f"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 137,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-light-monochrome-600x137.png",
+                "byteCount": 12032,
+                "sha256": "ec9e804cf7850ead4262ac84cf5e19b912b5116d5082873692a9f112982ba204"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "monochrome",
+          "qualifiedBackgrounds": [
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 110,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/lockup-compact/on-dark-monochrome.svg",
+                "byteCount": 6839,
+                "sha256": "b3bf641e00ce7d431277c3075e9edefdf5facb969161074e7403363d973a1c78"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 600,
+              "height": 137,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/lockup-compact/on-dark-monochrome-600x137.png",
+                "byteCount": 12364,
+                "sha256": "b580e1761d235037fa653c1c7657f789dee12845fade9a0408e6707dc942cb99"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "sponsor.banner",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 800,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/sponsor-banner/on-light.svg",
+                "byteCount": 8862,
+                "sha256": "c68a8180921a2f0246e647c64a6ad2590ea767158691e51b0624c08c67a52ed1"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 920,
+              "height": 340,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-light-920x340.png",
+                "byteCount": 125048,
+                "sha256": "d2ba70a6463a79db7c0e6d100945977d9fa797ed6e09f92aeafe76f8d2e1bce4"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1840,
+              "height": 680,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-light-1840x680.png",
+                "byteCount": 382440,
+                "sha256": "16b88abf0d9518ffb7739762b6a3f2a44acfbab7d66c5fd07ae48750f43cbb87"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/sponsor-banner/on-light-adaptive.svg",
+                "byteCount": 17712,
+                "sha256": "33c15b4c8fd3350a29c86f3f5706d74f83c31f9c7a3ed5edd489e3b3249d0c4a"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "animated",
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-light-animated.svg",
+                "byteCount": 11594,
+                "sha256": "b6fc259dfbb73490228925ecfe6c9fd94e0d070e1181bba05c67064375017338"
+              }
+            },
+            {
+              "format": "gif",
+              "motion": "animated",
+              "width": 920,
+              "height": 340,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-light-animated-920x340.gif",
+                "byteCount": 1271254,
+                "sha256": "4c034b3bfb5f2230588e9687d7f92330dc589373525d8c030ecb3c256c0bd666"
+              }
+            },
+            {
+              "format": "apng",
+              "motion": "animated",
+              "width": 920,
+              "height": 340,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-light-animated-920x340.apng",
+                "byteCount": 4047602,
+                "sha256": "3189b7982cade28fac647efc9b9b19a52106715f8f8bbc74488df264e241979a"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 800,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/sponsor-banner/on-dark.svg",
+                "byteCount": 8862,
+                "sha256": "ef3a16306270bdfe8890a1ba6934f772d1095b5670a6f1342e98970f97c6900d"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 920,
+              "height": 340,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-dark-920x340.png",
+                "byteCount": 116007,
+                "sha256": "49029654c378b270057a776529825c42a6beda07a89e0cc1698602ef9089a27a"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 1840,
+              "height": 680,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-dark-1840x680.png",
+                "byteCount": 326065,
+                "sha256": "bce7b911fc8859f0a62ebdc0c191f13c790cc57df7d7afa933e67368bee0043b"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/sponsor-banner/on-dark-adaptive.svg",
+                "byteCount": 17712,
+                "sha256": "33c15b4c8fd3350a29c86f3f5706d74f83c31f9c7a3ed5edd489e3b3249d0c4a"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "animated",
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-dark-animated.svg",
+                "byteCount": 11581,
+                "sha256": "e5b9501ea94bdd940477ca99a0b99017a45828723c1fa7cda113093eb11230c1"
+              }
+            },
+            {
+              "format": "gif",
+              "motion": "animated",
+              "width": 920,
+              "height": 340,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-dark-animated-920x340.gif",
+                "byteCount": 1227330,
+                "sha256": "e1cbb187ad616badcef9980673279eda8ddf9010f6d959c11d381045d8cfe733"
+              }
+            },
+            {
+              "format": "apng",
+              "motion": "animated",
+              "width": 920,
+              "height": 340,
+              "pixelDensity": 1,
+              "durationMs": 4100,
+              "loop": "finite",
+              "playCount": 1,
+              "file": {
+                "path": "assets/sponsor-banner/on-dark-animated-920x340.apng",
+                "byteCount": 4075982,
+                "sha256": "085809acfc5addb3220f20b269ad9be4571d828bdce77f8e88fc9f509f64e797"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.favicon",
+      "variants": [
+        {
+          "appearance": "on-light",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-favicon/on-light.svg",
+                "byteCount": 601,
+                "sha256": "d2d19dcb15020d114e99bc85b1cb3bfc27581f0bf8304df620e89b70d0f51185"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-16x16.png",
+                "byteCount": 399,
+                "sha256": "6be38b9fa32c4b7814fae97f017281da47d24a6f9e4402b5a00376752632e529"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-32x32.png",
+                "byteCount": 701,
+                "sha256": "fc6f5b0f948d93d6153a2c2877d5ffcfb0a6410718b16f3cdbe757cfde258960"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 48,
+              "height": 48,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-48x48.png",
+                "byteCount": 961,
+                "sha256": "fe768aca8a5fd5237ee0973829a6b3e31f23f9d45fe33287ce6c099146243458"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-light-64x64.png",
+                "byteCount": 1199,
+                "sha256": "dbff17b08d5015f2f4995e9ea699f2af44b3fdad2f78863c20707ffb6b21376e"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/icon-favicon/on-light-adaptive.svg",
+                "byteCount": 534,
+                "sha256": "5dbef81fcbdc51918a0a107d79b175d3b5ffc3c0feeeb8ec084af29e42ae9d63"
+              }
+            }
+          ]
+        },
+        {
+          "appearance": "on-dark",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 16,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-favicon/on-dark.svg",
+                "byteCount": 601,
+                "sha256": "c43da97f60cae098aac48720b57f4acaea76f30a38c593aa95db5bdf79ff30e8"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 16,
+              "height": 16,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-16x16.png",
+                "byteCount": 406,
+                "sha256": "625b260f8cf9fddda298e77f336fb253024d024940b77fc32ad961d62bc2e489"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 32,
+              "height": 32,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-32x32.png",
+                "byteCount": 702,
+                "sha256": "94955808ab962431c5cf9ca0fc47ed28a8de9b4014df6a36c479603c9f2ba44d"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 48,
+              "height": 48,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-48x48.png",
+                "byteCount": 943,
+                "sha256": "b600209faaee0870d98fb0293d64e1b250d686771d4f8dce45983e6bf5eb9b58"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 64,
+              "height": 64,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-64x64.png",
+                "byteCount": 1203,
+                "sha256": "ca4fa07063edfb803a2fc6a24efee2df29aaebf4232df1bcb39dffec19ad5ec3"
+              }
+            },
+            {
+              "format": "svg",
+              "motion": "static",
+              "adaptive": true,
+              "file": {
+                "path": "assets/icon-favicon/on-dark-adaptive.svg",
+                "byteCount": 534,
+                "sha256": "5dbef81fcbdc51918a0a107d79b175d3b5ffc3c0feeeb8ec084af29e42ae9d63"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.application",
+      "variants": [
+        {
+          "appearance": "universal",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 32,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-application/universal.svg",
+                "byteCount": 1190,
+                "sha256": "908ee2fa8bff63ecd7411fd3b5984cae77624cbe103ced6935f5f31de16679c0"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 192,
+              "height": 192,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-application/universal-192x192.png",
+                "byteCount": 8894,
+                "sha256": "f0b5430275a9b605fb16cd06b805577fc2858434459fa413896e508a79c9dfdc"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-application/universal-512x512.png",
+                "byteCount": 27144,
+                "sha256": "05fabb98c18760f3b27d252f1db329eeb09dc2f9f3a0415dd544517f34f0e238"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.touch",
+      "variants": [
+        {
+          "appearance": "universal",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 32,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-touch/universal.svg",
+                "byteCount": 1190,
+                "sha256": "908ee2fa8bff63ecd7411fd3b5984cae77624cbe103ced6935f5f31de16679c0"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 180,
+              "height": 180,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-touch/universal-180x180.png",
+                "byteCount": 8297,
+                "sha256": "0f6e9893d034744a9e760b0ba04a6ba6171e8b877c43a6234abe8657ec4066f4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "role": "icon.maskable",
+      "variants": [
+        {
+          "appearance": "universal",
+          "colorMode": "full-color",
+          "qualifiedBackgrounds": [
+            "light",
+            "dark"
+          ],
+          "qualificationEvidence": {
+            "sourcePath": "docs/brand-qualification.md"
+          },
+          "minimumWidthPx": 32,
+          "representations": [
+            {
+              "format": "svg",
+              "motion": "static",
+              "file": {
+                "path": "assets/icon-maskable/universal.svg",
+                "byteCount": 660,
+                "sha256": "9058e2142ed9e29cdcf24e082ccb7260b5b722b83e47fc088afeabdf38e49591"
+              }
+            },
+            {
+              "format": "png",
+              "motion": "static",
+              "width": 512,
+              "height": 512,
+              "pixelDensity": 1,
+              "file": {
+                "path": "assets/icon-maskable/universal-512x512.png",
+                "byteCount": 6215,
+                "sha256": "e69adb48986dd8c65d519be8da5ed13a4298a4c5fe19e4b49c82173f8039625b"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "components": {
+    "worksSponsor": {
+      "template": {
+        "path": "components/works-sponsor.html",
+        "byteCount": 9331,
+        "sha256": "658bbdd759bb6260520146e358854d20c54587ef1d4570e0335e515a8410c573"
+      },
+      "stylesheet": {
+        "path": "css/works-sponsor.css",
+        "byteCount": 6135,
+        "sha256": "4221d7da05fc2ad8761a61af99e3ce61f3b51af0367bf2487dc99a53168ee82c"
+      },
+      "behavior": {
+        "path": "components/works-sponsor.mjs",
+        "byteCount": 1054,
+        "sha256": "cb690b0cb64d7a3c80716a60da4ddfe01993f90bae8703bf9d35b3130947cbb0"
+      }
+    }
+  },
+  "bundleSha256": "e203e181f0a53eab8a7b3fd5077b6e8487a16f84493c0f86760aa0a74929ee95"
+}

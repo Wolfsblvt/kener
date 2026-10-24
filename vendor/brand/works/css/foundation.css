@@ -1,0 +1,4 @@
+@layer brand.foundation {
+[data-brand-foundation="works"] { color:var(--brand-text-primary);background:var(--brand-surface-canvas);font-family:var(--brand-font-reading); }
+[data-brand-foundation="works"] :focus-visible { outline:2px solid var(--brand-focus-ring);outline-offset:3px; }
+}
