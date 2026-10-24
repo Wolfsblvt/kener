@@ -402,6 +402,23 @@ export const GetPageDashboardData = async (
     monitorGroupMembersByTag[monitor.tag] = groupData.monitors.map((member) => member.tag);
   }
 
+  // Groups nested inside a page's groups expand in place too, so their members travel with the page data.
+  if (Object.keys(monitorGroupMembersByTag).length > 0) {
+    const membersByGroupTag = new Map<string, string[]>();
+    for (const group of await GetMonitorsParsed({ monitor_type: "GROUP", status: "ACTIVE" })) {
+      const groupData = group.type_data as GroupMonitorTypeData;
+      if (Array.isArray(groupData?.monitors)) membersByGroupTag.set(group.tag, groupData.monitors.map((m) => m.tag));
+    }
+    const pending = Object.values(monitorGroupMembersByTag).flat();
+    while (pending.length > 0) {
+      const tag = pending.pop() as string;
+      const members = membersByGroupTag.get(tag);
+      if (!members || monitorGroupMembersByTag[tag]) continue;
+      monitorGroupMembersByTag[tag] = members;
+      pending.push(...members);
+    }
+  }
+
   return {
     pageStatus,
     ongoingIncidents,
