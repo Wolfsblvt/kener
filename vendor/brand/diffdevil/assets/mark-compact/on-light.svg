@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="diffdevil">
+  <defs>
+  <mask id="diffdevil-mark-compact-on-light-face" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+  <rect width="32" height="32" fill="#fff">
+  </rect>
+  <path d="M6 16.5H12.5" fill="none" stroke="#000" stroke-width="3" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M19.5 16.5H26M22.75 13.25V19.75" fill="none" stroke="#000" stroke-width="3" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M8 25.01L8.33 24.69L8.67 24.34L9 23.98L9.33 23.6L9.67 23.22L10 22.86L10.33 22.51L10.67 22.19L11 21.9L11.33 21.66L11.67 21.46L12 21.32L12.33 21.23L12.67 21.2L13 21.23L13.33 21.32L13.67 21.46L14 21.66L14.33 21.9L14.67 22.19L15 22.51L15.33 22.86L15.67 23.22L16 23.6L16.33 23.98L16.67 24.34L17 24.69L17.33 25.01L17.67 25.3L18 25.54L18.33 25.74L18.67 25.88L19 25.97L19.33 26L19.67 25.97L20 25.88L20.33 25.74L20.67 25.54L21 25.3L21.33 25.01L21.67 24.69L22 24.34L22.33 23.98L22.67 23.6L23 23.22L23.33 22.86L23.67 22.51L24 22.19" fill="none" stroke="#000" stroke-width="3" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  </mask>
+  </defs>
+  <g mask="url(#diffdevil-mark-compact-on-light-face)">
+  <path fill="#161b24" d="M4 4L7.2 6.4V11H14.5V28H5.5A1.5 1.5 0 0 1 4 26.5Z">
+  </path>
+  <path fill="#e54eaf" d="M28 4L24.8 6.4V11H17.5V28H26.5A1.5 1.5 0 0 0 28 26.5Z">
+  </path>
+  </g>
+</svg>

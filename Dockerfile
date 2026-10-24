@@ -69,6 +69,12 @@ COPY . .
 # 4. Create directories that the app expects
 RUN mkdir -p database
 
+# 4b. Wolfsblvt fork: validate the vendored product brand bundles against their pins and serve them
+#     same-origin at /brand/<id>/ (see wolf/brand/pull.mjs). Fails the build on any changed byte.
+RUN node wolf/brand/pull.mjs --check && \
+    mkdir -p static/brand && \
+    cp -R vendor/brand/. static/brand/
+
 # 5. Conditionally remove docs routes before build
 #    (avoids EXDEV rename error in overlayfs; clean .svelte-kit so stale
 #    route types don't persist)

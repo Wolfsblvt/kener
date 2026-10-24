@@ -1,0 +1,15 @@
+{
+  "--brand-surface-canvas": "#100b11",
+  "--brand-surface-raised": "#181018",
+  "--brand-text-primary": "#f3e8dc",
+  "--brand-text-muted": "#d1c0b8",
+  "--brand-action-primary": "#eca557",
+  "--brand-action-primary-hover": "#ffd9a6",
+  "--brand-link": "#eca557",
+  "--brand-focus-ring": "#73cae3",
+  "--brand-border-default": "#493b42",
+  "--brand-font-reading": "\"Works Literata\", Georgia, serif",
+  "--brand-font-interface": "\"Works Albert Sans\", system-ui, sans-serif",
+  "--brand-font-accent": "\"Works Shantell Sans\", cursive",
+  "--brand-font-mono": "ui-monospace, monospace"
+}

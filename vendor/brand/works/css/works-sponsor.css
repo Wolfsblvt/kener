@@ -1,0 +1,61 @@
+/* Wolfsblvt Works — shared sponsor section.
+   Works owns: the artwork, the two corners on the border, the WORKS note, the two Works radii, the motion.
+   The host owns: panel background and border, its other two radii, typography, buttons, spacing around it.
+   Set --works-sponsor-veil to the panel's background colour so the copy side stays calm. */
+.works-sponsor{--works-sponsor-veil:var(--works-sponsor-background,#140d14);margin:var(--works-sponsor-spacing,0);position:relative;container-type:inline-size}
+.works-sponsor__panel{position:relative;overflow:hidden;isolation:isolate;min-height:270px;display:flex;align-items:center;
+  background:var(--works-sponsor-background,#140d14);border:var(--works-sponsor-border,1px solid #493b42);border-top-right-radius:var(--works-sponsor-radius-top-right,10px);border-bottom-left-radius:var(--works-sponsor-radius-bottom-left,10px);color:var(--works-sponsor-text,#f3e8dc);font-family:var(--works-sponsor-font,Georgia,serif);border-top-left-radius:32px;border-bottom-right-radius:49.6px}
+.works-sponsor__art{position:absolute;inset:0 0 0 auto;width:74%;z-index:-2}
+.works-sponsor__art svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.works-sponsor__veil{position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,var(--works-sponsor-veil) 0%,var(--works-sponsor-veil) 24%,color-mix(in srgb,var(--works-sponsor-veil) 70%,transparent) 36%,transparent 54%)}
+.works-sponsor__copy{position:relative;padding:56px clamp(22px,3vw,40px) 52px 56px;max-width:min(520px,60%)}
+.works-sponsor__corner{position:absolute;width:128px;height:128px;overflow:visible;pointer-events:none;z-index:2}
+.works-sponsor__corner--tl{left:-18.4px;top:-20px}
+.works-sponsor__corner--br{right:-18.400000000000006px;bottom:-18.400000000000006px}
+.works-sponsor__works{position:absolute;overflow:visible;pointer-events:none;z-index:3;right:85.6px;bottom:24px}
+/* Narrow sections: one column, the type behind the copy at low strength, WORKS written over the magenta corner. */
+@container (max-width:600px){
+  .works-sponsor__art{width:100%;opacity:.24}
+  .works-sponsor__veil{display:none}
+  .works-sponsor__copy{max-width:100%;padding:52px 30px 92px 40px}
+  .works-sponsor__works{right:6px;bottom:-8.8px}
+}
+
+/* Motion: corners draw (magenta answers later), then the letters light up from dim while WORKS is written. Plays once. */
+.works-sponsor{--dim:0.14}
+.works-sponsor.will-play:not(.is-playing) .dr,.works-sponsor.will-play:not(.is-playing) .hw,.works-sponsor.will-play:not(.is-playing) .ul{stroke-dasharray:1 2;stroke-dashoffset:1.001}
+.works-sponsor.will-play:not(.is-playing) .art-base{opacity:var(--dim)}
+.works-sponsor.will-play:not(.is-playing) .art-glow{opacity:calc(var(--dim) * .25)}
+.works-sponsor.will-play:not(.is-playing) .wipe{transform:translateX(calc(-1 * var(--travel)))}
+.works-sponsor.is-playing{--dim:0.14;--sweep:2.2s;--ws:0.19s;--wl:0.26s;--corner:0.7s;--stagger:0.38s;--after:1.15s}
+.works-sponsor.is-playing .dr,.works-sponsor.is-playing .hw,.works-sponsor.is-playing .ul{stroke-dasharray:1 2;stroke-dashoffset:1.001}
+.works-sponsor.is-playing .dr{animation:works-sponsor-draw var(--corner) cubic-bezier(.55,0,.2,1) forwards;animation-delay:calc(var(--i,0) * var(--stagger) + .05s)}
+.works-sponsor.is-playing .dot{transform-box:fill-box;transform-origin:50% 50%;animation:works-sponsor-pop .5s cubic-bezier(.3,1.9,.5,1) both calc(var(--after) - .05s)}
+.works-sponsor.is-playing .name-base,.works-sponsor.is-playing .art-base{animation:works-sponsor-holddim var(--sweep) linear both var(--after)}
+.works-sponsor.is-playing .art-glow{animation:works-sponsor-glowup var(--sweep) ease-in both var(--after)}
+.works-sponsor.is-playing .wipe{animation:works-sponsor-wipein var(--sweep) cubic-bezier(.45,.05,.3,1) both var(--after)}
+.works-sponsor.is-playing .band{animation:works-sponsor-band var(--sweep) cubic-bezier(.45,.05,.3,1) both var(--after)}
+.works-sponsor.is-playing .hw{animation:works-sponsor-draw var(--wl) cubic-bezier(.4,0,.6,1) forwards;animation-delay:calc(var(--after) + var(--i) * var(--ws))}
+.works-sponsor.is-playing .ul{animation:works-sponsor-draw .36s cubic-bezier(.3,0,.2,1) forwards;animation-delay:calc(var(--after) + 5 * var(--ws) + .04s)}
+@keyframes works-sponsor-draw{to{stroke-dashoffset:0}}
+@keyframes works-sponsor-pop{0%{transform:scale(0)}100%{transform:none}}
+@keyframes works-sponsor-holddim{0%,99.9%{opacity:var(--dim)}100%{opacity:1}}
+@keyframes works-sponsor-glowup{from{opacity:calc(var(--dim) * .25)}}
+@keyframes works-sponsor-wipein{from{transform:translateX(calc(-1 * var(--travel)))}to{transform:none}}
+@keyframes works-sponsor-band{from{transform:none}to{transform:translateX(var(--travel))}}
+@media (prefers-reduced-motion:reduce){.works-sponsor.is-playing *{animation:none!important}.works-sponsor.is-playing .dr,.works-sponsor.is-playing .hw,.works-sponsor.is-playing .ul{stroke-dashoffset:0}}
+
+
+/* Admitted host inputs: --works-sponsor-background, --works-sponsor-border,
+ --works-sponsor-radius-top-right, --works-sponsor-radius-bottom-left,
+ --works-sponsor-text, --works-sponsor-font, --works-sponsor-heading-font,
+ --works-sponsor-button-background, --works-sponsor-button-text,
+ --works-sponsor-spacing. Veil follows background; internal motion/geometry are not host inputs. */
+.works-sponsor .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.works-sponsor .actions a{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;text-decoration:none;font-weight:600;font-size:14px;border-radius:999px}
+.works-sponsor .actions a:focus-visible{outline:2px solid #73cae3;outline-offset:3px}
+.works-sponsor h2,.works-sponsor h3,.works-sponsor h4,.works-sponsor h5,.works-sponsor h6{margin:0;font:var(--works-sponsor-heading-font,400 clamp(34px,3.4vw,48px)/1 Georgia,serif);letter-spacing:-.025em}
+.works-sponsor p{margin:10px 0 0;font-size:16.5px;line-height:1.55}
+.works-sponsor .primary{background:var(--works-sponsor-button-background,#f3e8dc);color:var(--works-sponsor-button-text,#140d14)}
+.works-sponsor .secondary{border:1px solid currentColor;color:inherit}

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.2 1.5 98.7 21" role="img" aria-label="diffdevil">
+  <rect x="0" y="10" width="10" height="10" rx="2" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </rect>
+  <path fill="#161b24" d="M8.8 5.7L11.2 4V21.2H8.8Z">
+  </path>
+  <path d="M16 8.8V21.2" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <rect fill="#161b24" x="14.8" y="4" width="2.4" height="2.4">
+  </rect>
+  <path d="M24.5 21.2V8.5A4.5 4.5 0 0 1 29 4" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M22 10H28" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M32.5 21.2V8.5A4.5 4.5 0 0 1 37 4" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M30 10H36" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <rect x="41.3" y="10" width="10" height="10" rx="2" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </rect>
+  <path fill="#161b24" d="M50.1 5.7L52.5 4V21.2H50.1Z">
+  </path>
+  <path d="M57.3 15H67.3V12A2 2 0 0 0 65.3 10H59.3A2 2 0 0 0 57.3 12V18A2 2 0 0 0 59.3 20H65.8" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M73.3 8.8L77.8 20.4L82.3 8.8" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <path d="M88.3 8.8V21.2" fill="none" stroke="#161b24" stroke-width="2.4" stroke-linecap="butt" stroke-linejoin="round">
+  </path>
+  <rect fill="#161b24" x="87.1" y="4" width="2.4" height="2.4">
+  </rect>
+  <path fill="#161b24" d="M93.1 5.7L95.5 4V21.2H93.1Z">
+  </path>
+</svg>
