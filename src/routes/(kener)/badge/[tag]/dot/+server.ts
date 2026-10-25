@@ -4,13 +4,15 @@ import { ErrorSvg } from "$lib/anywhere.js";
 import GC from "$lib/global-constants.js";
 import type { StatusType } from "$lib/types/status.js";
 import { GetLastMonitoringValue } from "$lib/server/cache/setGet.js";
+import { CurrentStatusOf } from "$lib/server/services/statusFreshness.js";
+import { GetMinuteStartNowTimestampUTC } from "$lib/server/tool.js";
 import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = async ({ params, url }) => {
-  let lastObj: { status: string };
+  let currentStatus: string;
   const { tag } = params;
   if (tag == "_") {
-    lastObj = await GetLatestStatusActiveAll();
+    currentStatus = (await GetLatestStatusActiveAll()).status;
   } else {
     const ms = await GetMonitors({ tag: params.tag, status: "ACTIVE", is_hidden: "NO" });
     if (ms.length === 0) {
@@ -20,13 +22,14 @@ export const GET: RequestHandler = async ({ params, url }) => {
         },
       });
     }
-    lastObj = (await GetLastMonitoringValue(tag, () => GetLatestMonitoringData(tag))) as { status: string };
+    const lastObj = await GetLastMonitoringValue(tag, () => GetLatestMonitoringData(tag));
+    currentStatus = CurrentStatusOf(ms[0].cron, lastObj, GetMinuteStartNowTimestampUTC());
   }
   //read query params
   const query = url.searchParams;
   const animate = query.get("animate") || "";
   const myColors: StatusColors = await StatusColor();
-  const statusToMap = (lastObj?.status as StatusType) || GC.NO_DATA;
+  const statusToMap = currentStatus as StatusType;
 
   const fillColor = query.get("fillColor") || myColors[statusToMap];
   let svg = `

@@ -22,7 +22,7 @@ import type {
 import type { MonitorFilter } from "../db/repositories/base.js";
 import db from "../db/db.js";
 import type { PaginationInput } from "../../types/common.js";
-import GC, { getBadgeStyle, type BadgeStyle } from "../../global-constants.js";
+import GC, { getBadgeStyle, PAGE_STATUS_MESSAGES, type BadgeStyle } from "../../global-constants.js";
 import type { MonitoringStatus } from "../../types/status.js";
 import { makeBadge } from "badge-maker";
 import randomName from "@scaleway/random-name";
@@ -35,6 +35,7 @@ import {
 } from "../cache/setGet.js";
 import alertingQueue from "../queues/alertingQueue.js";
 import { CollapseStatusCounts } from "../../clientTools.js";
+import { CurrentStatusOf } from "../services/statusFreshness.js";
 import { translate, isLocaleAvailable } from "../i18n.js";
 import type { HeartbeatMonitor, GroupMonitorTypeData } from "../types/monitor.js";
 import { IsValidProxyURL, IsValidHeartbeatSecret, HEARTBEAT_SECRET_RULE } from "../../anywhere.js";
@@ -376,34 +377,37 @@ export const GetLatestMonitoringData = async (monitor_tag: string): Promise<Moni
 
   return latestData;
 };
-export const GetLatestStatusActiveAll = async (): Promise<{ status: string }> => {
-  //get all the active not hidden monitor tags
-  const monitors = await db.getMonitors({ status: GC.ACTIVE, is_hidden: GC.NO });
-  const monitor_tags = monitors.map((m) => m.tag);
-
-  const latestData: MonitoringData[] = [];
-  for (let i = 0; i < monitor_tags.length; i++) {
-    const tag = monitor_tags[i];
-    const lastObj = await GetLastMonitoringValue(tag, () => GetLatestMonitoringData(tag));
-    if (lastObj) {
-      latestData.push(lastObj);
-    }
-  }
+/**
+ * Overall status of every active, non-hidden monitor, counting only monitors whose latest result is current. When
+ * every known monitor is up but some monitors are unknown, the status is NO_DATA, never UP; `knownCount` lets the
+ * caller tell that case from "nothing is known". Outage, degradation and maintenance read from the known monitors.
+ */
+export const GetLatestStatusActiveAll = async (): Promise<{ status: string; knownCount: number }> => {
+  const monitors = await GetMonitorsParsed({ status: GC.ACTIVE, is_hidden: GC.NO });
+  const nowTs = GetMinuteStartNowTimestampUTC();
 
   const counts = { countOfUp: 0, countOfDown: 0, countOfDegraded: 0, countOfMaintenance: 0 };
-  for (const data of latestData) {
-    if (data.status === GC.UP) {
+  let unknownCount = 0;
+  for (const monitor of monitors) {
+    const lastObj = await GetLastMonitoringValue(monitor.tag, () => GetLatestMonitoringData(monitor.tag));
+    const status = CurrentStatusOf(monitor.cron, lastObj, nowTs);
+    if (status === GC.UP) {
       counts.countOfUp++;
-    } else if (data.status === GC.DOWN) {
+    } else if (status === GC.DOWN) {
       counts.countOfDown++;
-    } else if (data.status === GC.DEGRADED) {
+    } else if (status === GC.DEGRADED) {
       counts.countOfDegraded++;
-    } else if (data.status === GC.MAINTENANCE) {
+    } else if (status === GC.MAINTENANCE) {
       counts.countOfMaintenance++;
+    } else {
+      unknownCount++;
     }
   }
+  const knownCount = counts.countOfUp + counts.countOfDown + counts.countOfDegraded + counts.countOfMaintenance;
+  const collapsed = CollapseStatusCounts(counts);
   return {
-    status: CollapseStatusCounts(counts),
+    status: unknownCount > 0 && collapsed === GC.UP ? GC.NO_DATA : collapsed,
+    knownCount,
   };
 };
 
@@ -660,13 +664,16 @@ export const GetBadge = async (badgeType: BadgeType, params: BadgeParams): Promi
 
   // For status badge, we get real-time status
   if (badgeType === "status") {
-    let lastObj: { status: string } | undefined;
+    let status: string;
+    let partial = false;
 
     if (tag === "_") {
       // All monitors status
       const siteData = await db.getSiteDataByKey("siteName");
       name = (siteData?.value as string) || "All Monitors";
-      lastObj = await GetLatestStatusActiveAll();
+      const overall = await GetLatestStatusActiveAll();
+      status = overall.status;
+      partial = status === GC.NO_DATA && overall.knownCount > 0;
     } else {
       // Single monitor status
       const monitors = await GetMonitorsParsed({ tag, status: GC.ACTIVE, is_hidden: GC.NO });
@@ -677,10 +684,9 @@ export const GetBadge = async (badgeType: BadgeType, params: BadgeParams): Promi
       }
       const m = monitors[0];
       name = m.name;
-      lastObj = (await GetLastMonitoringValue(m.tag, () => GetLatestMonitoringData(m.tag))) as { status: string };
+      const lastObj = await GetLastMonitoringValue(m.tag, () => GetLatestMonitoringData(m.tag));
+      status = CurrentStatusOf(m.cron, lastObj, GetMinuteStartNowTimestampUTC());
     }
-
-    const status = (lastObj?.status as string) || GC.NO_DATA;
 
     // Resolve locale: validate against activated locales, fall back to configured default
     const i18nData = await db.getSiteDataByKey("i18n");
@@ -705,7 +711,11 @@ export const GetBadge = async (badgeType: BadgeType, params: BadgeParams): Promi
       [GC.MAINTENANCE]: "Under Maintenance",
       [GC.NO_DATA]: "No Status Available",
     };
-    message = translate(locale, statusLocaleKey[status] || status, defaultLocale);
+    message = translate(
+      locale,
+      partial ? PAGE_STATUS_MESSAGES.PARTIAL_NO_DATA : statusLocaleKey[status] || status,
+      defaultLocale,
+    );
 
     // Use status-specific color if no custom color provided
     if (!params.color) {
