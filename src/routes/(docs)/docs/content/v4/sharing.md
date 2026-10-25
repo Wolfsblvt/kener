@@ -38,7 +38,7 @@ When multiple monitor statuses collapse into one overall status (the page banner
 > [!NOTE]
 > Maintenance never masks an active problem: a page with one monitor under maintenance and another down or degraded reports the outage, not the maintenance.
 
-The page banner also counts monitors it cannot currently see: one with no result, a `NO_DATA` result, or only a result from before its previous scheduled run. Such a monitor never counts as `UP`. If every known monitor is `UP` and some are unknown, the banner says **Some Statuses Unavailable**; if none is known, **No Status Available**. The `_` badge counts only monitors with a result and does not apply this rule.
+The page banner and the status and dot badges also account for monitors they cannot currently see: one with no result, a `NO_DATA` result, or only a result from before its previous scheduled run. Such a monitor never counts as `UP`. If every known monitor is `UP` and some are unknown, the banner and the `_` status badge say **Some Statuses Unavailable** and the `_` dot badge uses the no-data colour; if none is known, they say **No Status Available**. A single monitor's status and dot badges show no data, not its last-known status, while its result is not current. Known outages, degradation and maintenance still show. The uptime and latency badges are unchanged. A monitor updated only through the API stays current only while its runs carry the status forward, for example with **Override with last known status**.
 
 ### Embeds {#embeds}
 
