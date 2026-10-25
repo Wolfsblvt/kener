@@ -23,6 +23,7 @@ export const PAGE_STATUS_MESSAGES = {
   PARTIAL_OUTAGE: "Partial System Outage",
   MAJOR_OUTAGE: "Major System Outage",
   NO_DATA: "No Status Available",
+  PARTIAL_NO_DATA: "Some Statuses Unavailable",
 } as const;
 
 // Helper to validate and get badge style
