@@ -275,3 +275,59 @@ describe("the admitted public origin in event.locals", () => {
     expect((await localsFor(headers)).publicOrigin).toBeNull();
   });
 });
+
+describe("CSRF on an admitted public origin", () => {
+  const PRODUCT = "https://status.product.example";
+  // With adapter-node and ORIGIN set, event.url is always the site URL, whatever Host the visitor sent
+  const SITE = "https://status.portfolio.example/";
+
+  const submit = (headers: Record<string, string>, url = SITE) =>
+    send({
+      url,
+      routeId: "/(kener)",
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded", ...headers },
+    });
+
+  describe("with KENER_PUBLIC_ORIGINS", () => {
+    beforeEach(() => vi.stubEnv("KENER_PUBLIC_ORIGINS", `${PRODUCT}=product`));
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("accepts a form whose Origin is the admitted origin", async () => {
+      const { response, resolve } = await submit({ host: "status.product.example", origin: PRODUCT });
+      expect(response.status).toBe(200);
+      expect(resolve).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+      ["the site URL", "https://status.portfolio.example"],
+      ["a foreign origin", "https://evil.example"],
+      ["the wrong scheme", "http://status.product.example"],
+      ["the wrong port", "https://status.product.example:8443"],
+      ["an unparseable value", "not an origin"],
+    ])("refuses a form on the admitted host whose Origin is %s", async (_case, origin) => {
+      const { response, resolve } = await submit({ host: "status.product.example", origin });
+      expect(response.status).toBe(403);
+      expect(resolve).not.toHaveBeenCalled();
+    });
+
+    it("judges a spoofed forwarding header by upstream's host comparison", async () => {
+      const spoofed = { host: "evil.example", "x-forwarded-host": "status.product.example", origin: PRODUCT };
+      expect((await submit(spoofed)).response.status).toBe(403);
+      const site = { host: "status.portfolio.example", "x-forwarded-host": "status.product.example" };
+      expect((await submit({ ...site, origin: "https://status.portfolio.example" })).response.status).toBe(200);
+      expect((await submit({ ...site, origin: PRODUCT })).response.status).toBe(403);
+    });
+  });
+
+  it("keeps upstream's comparison with event.url when nothing is admitted", async () => {
+    vi.stubEnv("KENER_PUBLIC_ORIGINS", "");
+    try {
+      expect((await submit({ host: "status.product.example", origin: PRODUCT })).response.status).toBe(403);
+      const portfolio = { host: "status.product.example", origin: "https://status.portfolio.example" };
+      expect((await submit(portfolio)).response.status).toBe(200);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});

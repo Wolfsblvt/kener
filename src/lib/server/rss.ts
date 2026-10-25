@@ -126,7 +126,8 @@ export interface RenderRssFeedArgs {
   scope: RenderRssFeedScope;
   // Path of THIS feed under basePath, e.g. "/rss.xml" or "/monitors/foo/rss.xml".
   feedPath: string;
-  // The admitted public origin the request arrived on: links use it, and a root page feed covers its page.
+  // The admitted public origin the request arrived on: links use it, its page names the channel, and a root
+  // page feed covers that page.
   publicOrigin?: PublicOrigin | null;
 }
 
@@ -136,7 +137,9 @@ export async function renderRssFeedResponse(args: RenderRssFeedArgs): Promise<Re
   if (!siteURL) {
     return new Response("Not found", { status: 404 });
   }
-  const siteName = siteData.siteName || "Status";
+  // On an admitted origin the feed is the page's own: its title names the channel, never the site's
+  const admittedPage = args.publicOrigin ? await db.getPageByPath(args.publicOrigin.pagePath) : undefined;
+  const siteName = admittedPage?.page_title || siteData.siteName || "Status";
   const basePath = process.env.KENER_BASE_PATH || "";
 
   let monitorTags: string[] | undefined = undefined;

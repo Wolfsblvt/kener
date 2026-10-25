@@ -40,6 +40,12 @@ export default async function post(req: APIServerRequest): Promise<Response> {
   const body = req.body as PostRequestBody;
   const { action } = body;
 
+  // A subscription covers every page, so it is never offered or changed on an admitted public origin,
+  // whose visitors would expect it to cover only that page's product
+  if (req.publicOrigin) {
+    return error(400, { message: "Subscriptions are not available on this status page" });
+  }
+
   // Check if subscriptions are enabled
   const config = await GetSubscriptionConfig();
   if (!config || !config.enable) {

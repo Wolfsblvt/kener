@@ -1,4 +1,5 @@
 import type { PageServerLoad } from "./$types";
+import { GuardAdmittedMonitor } from "$lib/server/publicOrigins.js";
 import { parseIntParam } from "$lib/server/api-server/monitor-bar/shared";
 import { GetMinuteStartNowTimestampUTC } from "$lib/server/tool";
 
@@ -6,8 +7,9 @@ const DEFAULT_DAYS = 90;
 const MAX_DAYS = 90;
 const DEFAULT_HEIGHT = 128;
 
-export const load: PageServerLoad = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params, url, locals }) => {
   const { tag } = params;
+  await GuardAdmittedMonitor(locals.publicOrigin, tag, `/embed/latency-${encodeURIComponent(tag)}`, url.search);
   const theme = url.searchParams.get("theme");
   const daysParam = url.searchParams.get("days");
   const heightParam = url.searchParams.get("height");

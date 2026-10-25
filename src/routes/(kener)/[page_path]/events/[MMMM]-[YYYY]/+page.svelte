@@ -158,6 +158,9 @@
 </script>
 
 <svelte:head>
+  {#if data.canonicalUrl}
+    <link rel="canonical" href={data.canonicalUrl} />
+  {/if}
   <title>{currentMonth} - Maintenances & Incidents - {data.siteName}</title>
   <meta name="description" content={`${currentMonth} maintenances and incidents for ${data.siteName}`} />
   <meta property="og:title" content={`${currentMonth} - Maintenances & Incidents - ${data.siteName}`} />

@@ -82,7 +82,11 @@ async function seed(monitors: MonitorState[]) {
 const statusBadgeText = async (tag: string) => await (await GetBadge("status", { tag })).text();
 
 const dotFill = async (tag: string) => {
-  const response = await dotBadge({ params: { tag }, url: new URL(`http://localhost/badge/${tag}/dot`) } as never);
+  const response = await dotBadge({
+    params: { tag },
+    url: new URL(`http://localhost/badge/${tag}/dot`),
+    locals: {},
+  } as never);
   return /fill="([^"]+)"/.exec(await response.text())?.[1];
 };
 

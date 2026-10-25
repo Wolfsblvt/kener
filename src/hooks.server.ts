@@ -61,6 +61,18 @@ const publicOriginHandle: Handle = async ({ event, resolve }) => {
   return resolve(event);
 };
 
+// On an admitted public origin event.url still carries ORIGIN, the site URL, so the browser's Origin is
+// compared with the admitted origin itself: scheme, host and port. Elsewhere upstream's host comparison holds.
+function isSameOrigin(event: RequestEvent, requestOrigin: string): boolean {
+  const admitted = event.locals.publicOrigin;
+  if (!admitted) return new URL(requestOrigin).host === event.url.host;
+  try {
+    return new URL(requestOrigin).origin === admitted.origin;
+  } catch {
+    return false;
+  }
+}
+
 // Custom CSRF handler: validates Origin when present, allows requests when absent.
 // When Origin is absent (e.g. Referrer-Policy: no-referrer), security relies on
 // SameSite=Lax cookies which prevent cross-site POST from carrying auth cookies.
@@ -72,12 +84,8 @@ const csrfHandle: Handle = async ({ event, resolve }) => {
     (request.method === "POST" || request.method === "PUT" || request.method === "PATCH" || request.method === "DELETE")
   ) {
     const requestOrigin = request.headers.get("origin");
-    if (requestOrigin && requestOrigin !== "null") {
-      const requestHost = new URL(requestOrigin).host;
-      const expectedHost = event.url.host;
-      if (requestHost !== expectedHost) {
-        return new Response(`Cross-site ${request.method} form submissions are forbidden`, { status: 403 });
-      }
+    if (requestOrigin && requestOrigin !== "null" && !isSameOrigin(event, requestOrigin)) {
+      return new Response(`Cross-site ${request.method} form submissions are forbidden`, { status: 403 });
     }
   }
 

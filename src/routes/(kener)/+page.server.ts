@@ -1,6 +1,7 @@
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import { GetPageDashboardData } from "$lib/server/controllers/dashboardController.js";
+import { AdmittedCanonicalURL } from "$lib/server/publicOrigins.js";
 
 export const load: PageServerLoad = async ({ parent, locals }) => {
   const layoutData = await parent();
@@ -11,5 +12,6 @@ export const load: PageServerLoad = async ({ parent, locals }) => {
   }
   return {
     ...dashboardData,
+    canonicalUrl: AdmittedCanonicalURL(locals.publicOrigin, "", "/"),
   };
 };

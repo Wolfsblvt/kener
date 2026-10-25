@@ -10,6 +10,10 @@
  * headers (`X-Forwarded-Host` and friends) are never read, so a client cannot talk its way onto an origin
  * that is not in this list, and an unknown or malformed host behaves exactly as upstream: the configured
  * site URL and every page. The list is read from the environment, never from the request or the database.
+ *
+ * On its origin the page is the product's own Home: its title, logo and brand favicon lead the shell, a
+ * monitor, incident or maintenance answers there only when the page shows it, and subscribing stays on the
+ * site URL, whose subscriptions cover every page.
  */
 import { error, redirect } from "@sveltejs/kit";
 import db from "$lib/server/db/db.js";
@@ -105,6 +109,42 @@ export function GuardAdmittedPageRoute(
 }
 
 /**
+ * Tags of every monitor the admitted page shows: its active monitors, hidden ones included (the routes
+ * still decide who may see those), and the members of its groups, which the page expands inline. Null
+ * when the page does not exist.
+ */
+export async function AdmittedPageMonitorTags(publicOrigin: PublicOrigin): Promise<Set<string> | null> {
+  const page = await db.getPageByPath(publicOrigin.pagePath);
+  if (!page) return null;
+
+  const shown = new Set<string>();
+  let next = (await db.getActivePageMonitors(page.id, true)).map((m) => m.monitor_tag);
+  while (next.length > 0) {
+    next.forEach((tag) => shown.add(tag));
+    const members = new Set<string>();
+    for (const monitor of await db.getMonitorsByTags(next)) {
+      if (monitor.monitor_type !== "GROUP" || monitor.status !== "ACTIVE") continue;
+      for (const tag of groupMemberTags(monitor.type_data)) {
+        if (!shown.has(tag)) members.add(tag);
+      }
+    }
+    next = [...members];
+  }
+  return shown;
+}
+
+function groupMemberTags(typeData: string | null | undefined): string[] {
+  try {
+    const members = (JSON.parse(typeData || "{}") as { monitors?: Array<{ tag?: unknown }> }).monitors;
+    return Array.isArray(members)
+      ? members.map((m) => m?.tag).filter((tag): tag is string => typeof tag === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * The admitted origin whose page shows every one of these monitors, for links built outside a request,
  * such as subscriber mail. Null when nothing is admitted, there are no monitors (a global event), or no
  * single admitted page shows them all; the caller then keeps the site URL.
@@ -115,12 +155,143 @@ export async function PublicOriginForMonitors(monitorTags: string[]): Promise<Pu
 
   const matches: PublicOrigin[] = [];
   for (const candidate of admitted) {
-    const page = await db.getPageByPath(candidate.pagePath);
-    if (!page) continue;
-    const shown = new Set((await db.getActivePageMonitors(page.id)).map((m) => m.monitor_tag));
-    if (monitorTags.every((tag) => shown.has(tag))) matches.push(candidate);
+    const shown = await AdmittedPageMonitorTags(candidate);
+    if (shown && monitorTags.every((tag) => shown.has(tag))) matches.push(candidate);
   }
   return matches.length === 1 ? matches[0] : null;
+}
+
+/**
+ * Keeps a monitor's own routes (detail, feed, badges, embeds) on the origins that show it. On an admitted
+ * origin a monitor its page does not show belongs to the site URL: see AnswerElsewhere. `path` is the
+ * route's path for this monitor, built from route params, never from the request URL.
+ */
+export async function GuardAdmittedMonitor(
+  publicOrigin: PublicOrigin | null | undefined,
+  monitorTag: string,
+  path: string,
+  search = "",
+): Promise<void> {
+  if (!publicOrigin) return;
+  const shown = await AdmittedPageMonitorTags(publicOrigin);
+  if (shown?.has(monitorTag)) return;
+  await AnswerElsewhere(publicOrigin, path, search);
+}
+
+/**
+ * Keeps an incident or maintenance on the origins that show it: on an admitted origin, a global event or
+ * one affecting a monitor its page shows. Any other event belongs to the site URL: see AnswerElsewhere.
+ */
+export async function GuardAdmittedEvent(
+  publicOrigin: PublicOrigin | null | undefined,
+  isGlobal: boolean,
+  monitorTags: string[],
+  path: string,
+  search = "",
+): Promise<void> {
+  if (!publicOrigin || isGlobal) return;
+  const shown = await AdmittedPageMonitorTags(publicOrigin);
+  if (shown && monitorTags.some((tag) => shown.has(tag))) return;
+  await AnswerElsewhere(publicOrigin, path, search);
+}
+
+/**
+ * Sends content that is not the admitted page's to the same path on the configured site URL, with a
+ * temporary redirect, because which page shows a monitor can change. The target host comes from site
+ * settings, never from the request. Without a site URL, or when it names the admitted origin itself, the
+ * content is not served here.
+ */
+async function AnswerElsewhere(publicOrigin: PublicOrigin, path: string, search: string): Promise<never> {
+  const siteURL = (await db.getSiteDataByKey("siteURL"))?.value;
+  let siteOrigin: string | null = null;
+  try {
+    siteOrigin = siteURL ? new URL(siteURL).origin : null;
+  } catch {
+    siteOrigin = null;
+  }
+  if (siteOrigin && siteOrigin !== publicOrigin.origin) {
+    throw redirect(307, siteOrigin + serverResolve(path) + search);
+  }
+  throw error(404, "Not Found");
+}
+
+/**
+ * The canonical URL of `rest` on a page that is an admitted origin's Home: on that origin, and on the
+ * site URL's `/<page>` routes, which keep serving the page until the site's compatibility redirect.
+ * Null for every other page, which keeps upstream's markup.
+ */
+export function AdmittedCanonicalURL(
+  publicOrigin: PublicOrigin | null | undefined,
+  pagePath: string,
+  rest: string,
+): string | null {
+  const home = publicOrigin ?? [...admittedOrigins().values()].find((o) => o.pagePath === pagePath);
+  return home ? home.origin + serverResolve(rest) : null;
+}
+
+/** What leads the shell on an admitted origin: the page's own identity, never the site's. */
+export interface AdmittedIdentity {
+  name: string;
+  logo: string | undefined;
+  favicon: string | undefined;
+  metaTitle: string | undefined;
+  metaDescription: string | undefined;
+  socialPreviewImage: string | undefined;
+}
+
+/**
+ * The admitted page's identity: its title and logo, the favicon of the brand bundle its logo comes from,
+ * and its meta and social preview settings. Null when the page does not exist. Nothing falls back to the
+ * site's name, logo or favicon; an unset value stays unset.
+ */
+export async function AdmittedOriginIdentity(publicOrigin: PublicOrigin): Promise<AdmittedIdentity | null> {
+  const page = await db.getPageByPath(publicOrigin.pagePath);
+  if (!page) return null;
+
+  let settings: { metaPageTitle?: unknown; metaPageDescription?: unknown; socialPagePreviewImage?: unknown } = {};
+  try {
+    settings = JSON.parse(page.page_settings_json ?? "{}") ?? {};
+  } catch {
+    settings = {};
+  }
+  const text = (value: unknown) => (typeof value === "string" && value.trim() ? value : undefined);
+  return {
+    name: page.page_title,
+    logo: page.page_logo || undefined,
+    favicon: BrandFavicon(page.page_logo),
+    metaTitle: text(settings.metaPageTitle) ?? page.page_title,
+    metaDescription: text(settings.metaPageDescription),
+    socialPreviewImage: text(settings.socialPagePreviewImage),
+  };
+}
+
+interface BrandManifest {
+  assets?: Array<{
+    role?: string;
+    variants?: Array<{ appearance?: string; representations?: Array<{ format?: string; file?: { path?: string } }> }>;
+  }>;
+}
+
+// The product brand bundles this fork vendors and serves at /brand/<id>/ (wolf/brand), read at build time
+const brandManifests = import.meta.glob<BrandManifest>("/vendor/brand/*/manifest.json", {
+  eager: true,
+  import: "default",
+});
+
+/**
+ * The SVG favicon of the brand bundle a logo is served from, in the logo's appearance: for
+ * "/brand/<id>/assets/wordmark/on-dark.svg", that bundle's `icon.favicon` on-dark SVG. Undefined for a
+ * logo outside a vendored bundle, or a bundle without a favicon.
+ */
+export function BrandFavicon(logo: string | null | undefined): string | undefined {
+  const match = logo?.match(/^\/brand\/([a-z0-9-]+)\/assets\/[^/]+\/([^/]+)$/);
+  if (!match) return undefined;
+  const [, id, file] = match;
+  const favicon = brandManifests[`/vendor/brand/${id}/manifest.json`]?.assets?.find((a) => a.role === "icon.favicon");
+  const variants = favicon?.variants ?? [];
+  const variant = variants.find((v) => v.appearance && file.startsWith(v.appearance)) ?? variants[0];
+  const path = variant?.representations?.find((r) => r.format === "svg")?.file?.path;
+  return path ? `/brand/${id}/${path}` : undefined;
 }
 
 /**
