@@ -8,6 +8,7 @@ import db from "../db/db.js";
 import monitorResponseQueue from "./monitorResponseQueue";
 import GC from "../../global-constants.js";
 import { resolveConfirmedStatus } from "../services/confirmationThreshold.js";
+import { IsRoleAwareGroup } from "../services/groupCall.js";
 
 let monitorExecuteQueue: Queue | null = null;
 let worker: Worker | null = null;
@@ -181,10 +182,11 @@ const addWorker = () => {
 
     // Merge data: later entries override earlier ones for all fields except error_message
     // Special-case: if realtime returns NO_DATA but a default status exists, prefer default status.
+    // Wolfsblvt fork: except for a role-aware group, whose NO_DATA means a required member cannot be seen.
     const defaultStatus = defaultData[ts]?.status;
     const realtimeStatus = realtimeData[ts]?.status;
     let realtimeDataForMerge = realtimeData;
-    if (defaultStatus && realtimeStatus === GC.NO_DATA) {
+    if (defaultStatus && realtimeStatus === GC.NO_DATA && !IsRoleAwareGroup(monitor)) {
       // Apply the preference *before* merging so incident/maintenance can still override later.
       // Also avoid carrying over realtime NO_DATA error_message.
       realtimeDataForMerge = { ...realtimeData };

@@ -2,7 +2,8 @@ import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 import GC from "../../global-constants.js";
 import type { GroupMonitor, GroupMonitorMember, MonitoringResult } from "../types/monitor.js";
 import { GetLastMonitoringValue } from "../cache/setGet.js";
-import { GetLatestMonitoringData } from "../controllers/controller.js";
+import { GetLatestMonitoringData, GetMonitorsParsed } from "../controllers/controller.js";
+import { IsCurrentResult } from "./statusFreshness.js";
 
 /**
  * Numeric scores for each status (normalized 0–1).
@@ -28,10 +29,14 @@ function scoreToStatus(score: number): string {
 /**
  * Derive a group's status from its members' latest statuses.
  *
- * Without roles this is the weighted score above, unchanged. With roles, the group answers "can people use this?":
- * a required member that is down makes the group down, required maintenance makes it maintenance, and anything
- * else that is not up makes it degraded. A supporting member can only degrade the group, unless every member is
- * down or in maintenance. Members without data are left out, as in the weighted path.
+ * Without roles this is the weighted score above, unchanged: members without data are left out.
+ *
+ * With roles, the group answers "can people use this?" and every configured member counts. A member is unknown when
+ * it has no current result or its result is NO_DATA. In order: a group whose members are all unknown is NO_DATA;
+ * a group whose members are all down is DOWN; a required member that is down makes the group DOWN; a required member
+ * that is unknown makes it NO_DATA, never UP and never an invented outage; all members in maintenance, or a required
+ * member in maintenance, make it MAINTENANCE; anything else that is not up, including an unknown supporting member,
+ * makes it DEGRADED. A member without a role counts as required.
  */
 export function RollupGroupStatus(members: GroupMonitorMember[], statusByTag: Map<string, string>): string {
   if (!members.some((m) => m.role)) {
@@ -50,17 +55,30 @@ export function RollupGroupStatus(members: GroupMonitorMember[], statusByTag: Ma
     return scoreToStatus(weightedScore);
   }
 
-  const observed = members.filter((m) => statusByTag.has(m.tag));
-  if (observed.length === 0) return GC.DOWN;
-  const statusOf = (m: GroupMonitorMember) => statusByTag.get(m.tag) as string;
-  const required = observed.filter((m) => (m.role ?? "required") === "required");
+  const statusOf = (m: GroupMonitorMember) => statusByTag.get(m.tag) ?? GC.NO_DATA;
+  const required = members.filter((m) => (m.role ?? "required") === "required");
 
-  if (observed.every((m) => statusOf(m) === GC.DOWN)) return GC.DOWN;
+  if (members.every((m) => statusOf(m) === GC.NO_DATA)) return GC.NO_DATA;
+  if (members.every((m) => statusOf(m) === GC.DOWN)) return GC.DOWN;
   if (required.some((m) => statusOf(m) === GC.DOWN)) return GC.DOWN;
-  if (observed.every((m) => statusOf(m) === GC.MAINTENANCE)) return GC.MAINTENANCE;
+  if (required.some((m) => statusOf(m) === GC.NO_DATA)) return GC.NO_DATA;
+  if (members.every((m) => statusOf(m) === GC.MAINTENANCE)) return GC.MAINTENANCE;
   if (required.some((m) => statusOf(m) === GC.MAINTENANCE)) return GC.MAINTENANCE;
-  if (observed.some((m) => statusOf(m) !== GC.UP)) return GC.DEGRADED;
+  if (members.some((m) => statusOf(m) !== GC.UP)) return GC.DEGRADED;
   return GC.UP;
+}
+
+/**
+ * Whether this monitor is a role-aware group. Its NO_DATA is a finding (a required member cannot be seen), not a
+ * missing check result, so a configured default status must not replace it.
+ */
+export function IsRoleAwareGroup(monitor: { monitor_type?: string | null; type_data?: unknown }): boolean {
+  const members = (monitor.type_data as { monitors?: unknown } | null | undefined)?.monitors;
+  return (
+    monitor.monitor_type === "GROUP" &&
+    Array.isArray(members) &&
+    members.some((m: GroupMonitorMember | null) => !!m?.role)
+  );
 }
 
 class GroupCall {
@@ -77,12 +95,13 @@ class GroupCall {
     const members = this.monitor.type_data.monitors;
 
     // Collect each member's latest status + latency
-    const statusMap = new Map<string, { status: string; latency: number }>();
+    const statusMap = new Map<string, { status: string; latency: number; timestamp: number }>();
 
     for (const member of members) {
       const lastObj = (await GetLastMonitoringValue(member.tag, () => GetLatestMonitoringData(member.tag))) as {
         status: string;
         latency: number;
+        timestamp: number;
       } | null;
       if (lastObj) {
         statusMap.set(member.tag, lastObj);
@@ -104,6 +123,16 @@ class GroupCall {
     }
 
     const statusByTag = new Map([...statusMap].map(([tag, value]) => [tag, value.status]));
+    if (members.some((m) => m.role)) {
+      // A role-aware group must not report last-known results as current. Keep only results from each member's
+      // latest scheduled runs; an inactive or deleted member has no schedule and so no current result.
+      const cronByTag = new Map(
+        (await GetMonitorsParsed({ tags: members.map((m) => m.tag), status: "ACTIVE" })).map((m) => [m.tag, m.cron]),
+      );
+      for (const [tag, value] of statusMap) {
+        if (!IsCurrentResult(cronByTag.get(tag), value.timestamp, startOfMinute)) statusByTag.delete(tag);
+      }
+    }
     const status = RollupGroupStatus(members, statusByTag);
 
     return { status, latency, type: GC.REALTIME };

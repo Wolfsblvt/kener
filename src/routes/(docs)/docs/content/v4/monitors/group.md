@@ -49,18 +49,24 @@ Mapped group status:
 
 Set `role` on a member when its failure means something specific for the group: `required` (people cannot use the group without it) or `supporting` (the group works without it, but worse). Weights are then ignored for the status.
 
-As soon as one member has a `role`, the group takes the first matching row. A member without a `role` counts as `required`.
+As soon as one member has a `role`, every configured member counts and the group takes the first matching row. A member without a `role` counts as `required`. A member is **unknown** when it has no current result or its result is `NO_DATA`.
 
-| Order | When                                                  | Group status  |
-| :---- | :---------------------------------------------------- | :------------ |
-| 1     | every member with data is `DOWN`                      | `DOWN`        |
-| 2     | a `required` member is `DOWN`                         | `DOWN`        |
-| 3     | every member with data is in `MAINTENANCE`            | `MAINTENANCE` |
-| 4     | a `required` member is in `MAINTENANCE`               | `MAINTENANCE` |
-| 5     | any other member is not `UP` (including `supporting`) | `DEGRADED`    |
-| 6     | every member is `UP`                                  | `UP`          |
+| Order | When                                                                 | Group status  |
+| :---- | :------------------------------------------------------------------- | :------------ |
+| 1     | every member is unknown                                              | `NO_DATA`     |
+| 2     | every member is `DOWN`                                               | `DOWN`        |
+| 3     | a `required` member is `DOWN`                                        | `DOWN`        |
+| 4     | a `required` member is unknown                                       | `NO_DATA`     |
+| 5     | every member is in `MAINTENANCE`                                     | `MAINTENANCE` |
+| 6     | a `required` member is in `MAINTENANCE`                              | `MAINTENANCE` |
+| 7     | any other member is not `UP` (including an unknown `supporting` one) | `DEGRADED`    |
+| 8     | every member is `UP`                                                 | `UP`          |
 
-Members that have no data yet are left out. A group where no member has data is `DOWN`. Latency is calculated as before and does not depend on roles.
+A required member that cannot be seen never makes the group `UP`, and it does not invent an outage either. Latency is calculated as before and does not depend on roles.
+
+A result is **current** when it comes from the member's previous scheduled run or later (the run due this minute may still be in flight). A member that is paused, deleted, or has missed a whole run of its own cron schedule is unknown, even if its last result was `UP`. A member updated only through the API stays current while its runs carry the status forward, for example a None monitor with **Override with last known status**. Groups without roles keep the weighted score, including last-known results.
+
+A group's own **Default Status** does not replace this `NO_DATA`: with roles, `NO_DATA` is the group's finding, not a missing check.
 
 Use exactly `required` or `supporting`: the API does not validate the value, and any other value counts as `supporting`. Weights must still sum to `1`, as in [Minimum setup](#minimum-setup).
 
@@ -129,4 +135,4 @@ Group latency uses selected mode:
 - **Unexpected stale status (cron)**: increase `executionDelay` so member checks finish before the group aggregates
 - **Unexpected stale status (API updates)**: ensure you are running a version that updates the cache on API writes — older versions only updated the cache from cron, causing the group to miss API-driven status changes
 - **Group too sensitive/lenient**: adjust weights — higher weight on critical monitors makes their failure impact the group score more. With roles, weights are ignored: change a member's `role` instead
-- **Group is `DOWN` with no failing member**: with roles, a group where no member has data yet is `DOWN`. Check that the members are active and have run
+- **Group is `NO_DATA` with roles**: a required member has no current result. Check that it is active, that its checks complete on its schedule, and that `executionDelay` lets them finish
