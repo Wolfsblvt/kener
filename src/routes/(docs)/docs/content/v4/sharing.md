@@ -36,7 +36,9 @@ When multiple monitor statuses collapse into one overall status (the page banner
 `DOWN` > `DEGRADED` > `MAINTENANCE` > `UP`
 
 > [!NOTE]
-> Maintenance never masks an active problem: a page with one monitor under maintenance and another down or degraded reports the outage, not the maintenance. `NO_DATA` is shown only when no monitor has reported any data.
+> Maintenance never masks an active problem: a page with one monitor under maintenance and another down or degraded reports the outage, not the maintenance.
+
+The page banner also counts monitors it cannot currently see: one with no result, a `NO_DATA` result, or only a result from before its previous scheduled run. Such a monitor never counts as `UP`. If every known monitor is `UP` and some are unknown, the banner says **Some Statuses Unavailable**; if none is known, **No Status Available**. The `_` badge counts only monitors with a result and does not apply this rule.
 
 ### Embeds {#embeds}
 

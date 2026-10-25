@@ -2,7 +2,8 @@ import db from "../db/db.js";
 import { GetMinuteStartNowTimestampUTC, BeginningOfMinute, BeginningOfDay } from "../tool.js";
 import { GetPageByPathWithMonitors, GetLatestMonitoringDataAllActive } from "./controller.js";
 import { GetMonitorsParsed } from "./monitorsController.js";
-import { GetStatusSummary, GetStatusBgColor } from "../../clientTools";
+import { GetStatusSummary, GetStatusBgColor, CollapseStatusCounts } from "../../clientTools";
+import { IsCurrentResult } from "../services/statusFreshness.js";
 
 import type {
   IncidentRecord,
@@ -15,7 +16,7 @@ import type {
   IncidentMonitorDetailRecord,
 } from "../types/db.js";
 import type { GroupMonitorTypeData } from "../types/monitor.js";
-import GC from "../../global-constants.js";
+import GC, { PAGE_STATUS_MESSAGES } from "../../global-constants.js";
 import type { LayoutServerData } from "./layoutController.js";
 import type { NotificationEvent } from "../../types/notifications.js";
 
@@ -162,16 +163,35 @@ export interface PageDashboardData {
   metaPageDescription?: string;
 }
 
-const BuildPageStatus = (latestData: Array<{ status?: string | null; latency?: number | null }>, nowTs: number) => {
+/**
+ * Summarize a page from each of its monitors' latest result. A monitor with no result, a NO_DATA result, or only a
+ * last-known result from before its previous scheduled run is unknown. Unknown monitors never count as up: a page
+ * whose known monitors are all up but which cannot see some of the rest says so instead of claiming everything is
+ * operational. Outage, degradation and maintenance read as before from the monitors that are known.
+ */
+export const BuildPageStatus = (
+  monitorTags: string[],
+  latestData: Array<{ monitor_tag: string; timestamp: number; status?: string | null; latency?: number | null }>,
+  cronByTag: Map<string, string | null | undefined>,
+  nowTs: number,
+) => {
   let upsInLatestData = 0;
   let downsInLatestData = 0;
   let degradedsInLatestData = 0;
   let maintenancesInLatestData = 0;
+  let unknownMonitors = 0;
   let latencySum = 0;
   let maxLatency = 0;
   let minLatency = Infinity;
 
-  for (const data of latestData) {
+  const latestByTag = new Map(latestData.map((data) => [data.monitor_tag, data]));
+  for (const tag of new Set(monitorTags)) {
+    const data = latestByTag.get(tag);
+    if (!data || !IsCurrentResult(cronByTag.get(tag), data.timestamp, nowTs)) {
+      unknownMonitors++;
+      continue;
+    }
+
     if (data.status === GC.UP) {
       upsInLatestData++;
     } else if (data.status === GC.DOWN) {
@@ -180,6 +200,8 @@ const BuildPageStatus = (latestData: Array<{ status?: string | null; latency?: n
       degradedsInLatestData++;
     } else if (data.status === GC.MAINTENANCE) {
       maintenancesInLatestData++;
+    } else {
+      unknownMonitors++;
     }
 
     const latency = data.latency || 0;
@@ -203,6 +225,9 @@ const BuildPageStatus = (latestData: Array<{ status?: string | null; latency?: n
     minLatency: minLatency === Infinity ? 0 : minLatency,
   };
 
+  if (unknownMonitors > 0 && CollapseStatusCounts(item) === GC.UP) {
+    return { statusSummary: PAGE_STATUS_MESSAGES.PARTIAL_NO_DATA, statusClass: "bg-muted-foreground" };
+  }
   return {
     statusSummary: GetStatusSummary(item),
     statusClass: GetStatusBgColor(item),
@@ -357,7 +382,7 @@ export const GetPageDashboardData = async (
 
   if (monitorTags.length === 0) {
     return {
-      pageStatus: BuildPageStatus([], nowTs),
+      pageStatus: BuildPageStatus([], [], new Map(), nowTs),
       ongoingIncidents: [],
       ongoingMaintenances: [],
       upcomingMaintenances: [],
@@ -394,7 +419,12 @@ export const GetPageDashboardData = async (
       : Promise.resolve([] as MaintenanceEventsMonitorList[]),
   ]);
 
-  const pageStatus = BuildPageStatus(latestData, nowTs);
+  const pageStatus = BuildPageStatus(
+    monitorTags,
+    latestData,
+    new Map(parsedMonitors.map((monitor) => [monitor.tag, monitor.cron])),
+    nowTs,
+  );
   const monitorGroupMembersByTag: Record<string, string[]> = {};
 
   for (const monitor of parsedMonitors) {
@@ -411,7 +441,11 @@ export const GetPageDashboardData = async (
     const membersByGroupTag = new Map<string, string[]>();
     for (const group of await GetMonitorsParsed({ monitor_type: "GROUP", status: "ACTIVE" })) {
       const groupData = group.type_data as GroupMonitorTypeData;
-      if (Array.isArray(groupData?.monitors)) membersByGroupTag.set(group.tag, groupData.monitors.map((m) => m.tag));
+      if (Array.isArray(groupData?.monitors))
+        membersByGroupTag.set(
+          group.tag,
+          groupData.monitors.map((m) => m.tag),
+        );
     }
     const pending = Object.values(monitorGroupMembersByTag).flat();
     while (pending.length > 0) {
