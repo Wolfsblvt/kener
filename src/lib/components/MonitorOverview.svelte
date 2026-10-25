@@ -218,7 +218,7 @@
       <!-- Add group GroupMonitorPopover here -->
       {#if groupTags.length > 0}
         <div class="flex justify-center">
-          <GroupMonitorPopover tags={groupTags} days={selectedDays} {endOfDayTodayAtTz}>
+          <GroupMonitorPopover tags={groupTags} days={selectedDays} {endOfDayTodayAtTz} groupName={overviewData.name}>
             {$t("Included Monitors (%count)", { count: String(groupTags.length) })}
             <ArrowUp class="size-3" />
           </GroupMonitorPopover>
