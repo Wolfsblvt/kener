@@ -58,11 +58,15 @@
   let dialogOpen = $state(false);
   let selectedDay = $state<{ timestamp: number; status: string } | null>(null);
 
-  // Colors from page data
-  const colorUp = $derived(page.data.siteStatusColors?.UP || "#22c55e");
-  const colorDown = $derived(page.data.siteStatusColors?.DOWN || "#ef4444");
-  const colorDegraded = $derived(page.data.siteStatusColors?.DEGRADED || "#eab308");
-  const colorMaintenance = $derived(page.data.siteStatusColors?.MAINTENANCE || "#3b82f6");
+  // Colors from page data, following the active theme like the rest of the page (Wolfsblvt fork:
+  // upstream always painted the light set).
+  const statusColors = $derived(
+    (mode.current === "dark" ? page.data.siteStatusColorsDark : null) || page.data.siteStatusColors
+  );
+  const colorUp = $derived(statusColors?.UP || "#22c55e");
+  const colorDown = $derived(statusColors?.DOWN || "#ef4444");
+  const colorDegraded = $derived(statusColors?.DEGRADED || "#eab308");
+  const colorMaintenance = $derived(statusColors?.MAINTENANCE || "#3b82f6");
   const gap = 0;
 
   // Track hovered index separately for efficient redraw
@@ -126,7 +130,8 @@
     ctx.scale(dpr, dpr);
 
     const barWidth = calculateBarWidth();
-    const noDataColor = mode.current === "dark" ? "#27272a" : "#e4e4e7";
+    const themedNoData = getComputedStyle(canvas).getPropertyValue("--muted").trim();
+    const noDataColor = themedNoData || (mode.current === "dark" ? "#27272a" : "#e4e4e7");
     const roundedGap = Math.round(gap);
 
     // Clear canvas
