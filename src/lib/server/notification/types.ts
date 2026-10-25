@@ -30,6 +30,8 @@ export interface SiteDataForNotification {
 }
 export interface SubscriptionVariableMap {
   title: string;
+  // Overrides the site's site_url when the event belongs to one admitted public origin (KENER_PUBLIC_ORIGINS)
+  site_url?: string;
   cta_url: string;
   cta_text: string;
   update_text: string;

@@ -15,6 +15,7 @@ import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 import { maintenanceToVariables, siteDataToVariables } from "../notification/notification_utils.js";
 import { GetAllSiteData } from "./controller.js";
 import subscriberQueue from "../queues/subscriberQueue.js";
+import { SubscriberMailSiteURL } from "../publicOrigins.js";
 import GC from "../../global-constants";
 import seedSiteData from "../db/seedSiteData.js";
 
@@ -111,9 +112,15 @@ const pushMaintenanceUpdate = async (
   ]);
   if (maintenance?.is_global !== "YES" && monitors.length === 0) return;
   const monitorNames = monitors.map((m) => `${m.monitor_name}(${m.monitor_impact})`).join(", ");
-  await subscriberQueue.push(
-    maintenanceToVariables(event, monitorNames, statusMessage, updateIdSuffix, subjectPrefix, siteUrl),
+  const mailSiteUrl = await SubscriberMailSiteURL(
+    siteUrl,
+    maintenance?.is_global === "YES",
+    monitors.map((m) => m.monitor_tag),
   );
+  await subscriberQueue.push({
+    ...maintenanceToVariables(event, monitorNames, statusMessage, updateIdSuffix, subjectPrefix, mailSiteUrl),
+    site_url: mailSiteUrl,
+  });
 };
 
 export const CreateMaintenanceEventWithNotification = async (

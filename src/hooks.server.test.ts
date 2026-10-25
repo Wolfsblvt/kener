@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Handle, RequestEvent, ResolveOptions } from "@sveltejs/kit";
 
 const { db, GetMonitorsParsed } = vi.hoisted(() => ({
@@ -251,4 +251,27 @@ describe("route params fill event.locals", () => {
       expect(resolve).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("the admitted public origin in event.locals", () => {
+  const PRODUCT = { origin: "https://status.product.example", pagePath: "product" };
+
+  beforeEach(() => vi.stubEnv("KENER_PUBLIC_ORIGINS", `${PRODUCT.origin}=product`));
+  afterEach(() => vi.unstubAllEnvs());
+
+  const localsFor = async (headers: Record<string, string>) =>
+    (await send({ url: "http://127.0.0.1:3000/", routeId: "/(kener)", headers })).locals;
+
+  it("comes from a Host header that names an admitted origin", async () => {
+    expect((await localsFor({ host: "status.product.example" })).publicOrigin).toStrictEqual(PRODUCT);
+  });
+
+  it.each<Record<string, string>>([
+    { host: "status.portfolio.example" },
+    { host: "evil.example", "x-forwarded-host": "status.product.example" },
+    { host: "evil.example", forwarded: "host=status.product.example;proto=https" },
+    { host: "evil.example", "x-original-host": "status.product.example" },
+  ])("is null for %o: only the exact Host header is read", async (headers) => {
+    expect((await localsFor(headers)).publicOrigin).toBeNull();
+  });
 });

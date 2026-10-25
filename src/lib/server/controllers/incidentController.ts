@@ -22,6 +22,7 @@ import { getUnixTime, differenceInSeconds } from "date-fns";
 import { siteDataToVariables } from "../notification/notification_utils.js";
 import { GetAllSiteData } from "./siteDataController.js";
 import subscriberQueue from "../queues/subscriberQueue.js";
+import { SubscriberMailSiteURL } from "../publicOrigins.js";
 import mdToHTML from "../../marked.js";
 import type { SubscriptionVariableMap } from "../notification/types.js";
 
@@ -472,19 +473,25 @@ const notifySubscribersOfComment = async (
 ): Promise<void> => {
   try {
     const siteData = await GetAllSiteData();
-    const siteUrl = siteDataToVariables(siteData).site_url;
     // Failing to read the impact must not cost the mail itself; it goes out without the flags.
-    let impacts: Array<string | null> | null = null;
+    let monitors: Array<{ monitor_tag: string; monitor_impact: string | null }> | null = null;
     try {
-      impacts = (await db.getMonitorsByIncidentId(incident.id)).map((m) => m.monitor_impact);
+      monitors = await db.getMonitorsByIncidentId(incident.id);
     } catch (err) {
       console.error(`Error reading monitors of incident ${incident.id} for its subscriber mail:`, err);
     }
+    const impacts = monitors?.map((m) => m.monitor_impact) ?? null;
     // Subscribers hear only of incidents a status page shows: global, or with a monitor that is not hidden.
     if (incident.is_global !== "YES" && impacts?.length === 0) return;
     const impact = impacts?.includes(GC.DOWN) ? GC.DOWN : impacts?.includes(GC.DEGRADED) ? GC.DEGRADED : "";
+    const siteUrl = await SubscriberMailSiteURL(
+      siteDataToVariables(siteData).site_url,
+      incident.is_global === "YES",
+      monitors?.map((m) => m.monitor_tag) ?? [],
+    );
     const variables: SubscriptionVariableMap = {
       title: incident.title,
+      site_url: siteUrl,
       cta_url: `${siteUrl}incidents/${incident.id}`,
       cta_text: "View Incident",
       update_text: mdToHTML(comment.comment),

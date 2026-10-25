@@ -1,0 +1,144 @@
+/**
+ * Product status Homes on admitted public origins.
+ *
+ * `KENER_PUBLIC_ORIGINS` admits extra public origins, each serving exactly one status page at its root,
+ * from the same instance, database, monitors, history and subscribers:
+ *
+ *   KENER_PUBLIC_ORIGINS=https://status.example.org=example,https://status.other.dev=other
+ *
+ * A request is on an admitted origin only when its `Host` header is exactly an admitted host. Forwarding
+ * headers (`X-Forwarded-Host` and friends) are never read, so a client cannot talk its way onto an origin
+ * that is not in this list, and an unknown or malformed host behaves exactly as upstream: the configured
+ * site URL and every page. The list is read from the environment, never from the request or the database.
+ */
+import { error, redirect } from "@sveltejs/kit";
+import db from "$lib/server/db/db.js";
+import serverResolve from "$lib/server/resolver.js";
+
+export interface PublicOrigin {
+  /** Absolute origin without a trailing slash, e.g. "https://status.example.org". */
+  origin: string;
+  /** Path of the status page this origin serves at its root. */
+  pagePath: string;
+}
+
+// Same character set pagesController normalizes a page path to; the home page ("") is never admitted.
+const PAGE_PATH = /^[a-z0-9_-]+$/;
+
+/**
+ * Parses the admitted origins, keyed by host. An invalid entry, or a second entry for the same host or
+ * the same page, is logged and skipped: a broken entry must never widen what is admitted.
+ */
+export function ParsePublicOrigins(raw: string | undefined): Map<string, PublicOrigin> {
+  const admitted = new Map<string, PublicOrigin>();
+  const pagePaths = new Set<string>();
+  for (const entry of (raw ?? "").split(",")) {
+    const trimmed = entry.trim();
+    if (!trimmed) continue;
+
+    const separator = trimmed.lastIndexOf("=");
+    const origin = separator > 0 ? parseOrigin(trimmed.slice(0, separator)) : null;
+    const pagePath = trimmed.slice(separator + 1).trim();
+    if (!origin || !PAGE_PATH.test(pagePath)) {
+      console.error(`KENER_PUBLIC_ORIGINS: ignoring "${trimmed}"; expected <http(s) origin>=<page path>`);
+      continue;
+    }
+
+    const host = new URL(origin).host;
+    if (admitted.has(host) || pagePaths.has(pagePath)) {
+      console.error(`KENER_PUBLIC_ORIGINS: ignoring "${trimmed}"; its host or page is already admitted`);
+      continue;
+    }
+    admitted.set(host, { origin, pagePath });
+    pagePaths.add(pagePath);
+  }
+  return admitted;
+}
+
+function parseOrigin(value: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  if (url.username || url.password || url.search || url.hash || url.pathname !== "/") return null;
+  return url.origin;
+}
+
+let parsedFrom: string | undefined;
+let parsed = new Map<string, PublicOrigin>();
+
+// Re-parses only when the variable's value changes, so an invalid entry is logged once, not per request.
+function admittedOrigins(): Map<string, PublicOrigin> {
+  const raw = process.env.KENER_PUBLIC_ORIGINS ?? "";
+  if (raw !== parsedFrom) {
+    parsed = ParsePublicOrigins(raw);
+    parsedFrom = raw;
+  }
+  return parsed;
+}
+
+/** The admitted origin a request's `Host` header names exactly, or null for any other host. */
+export function PublicOriginForHost(host: string | null): PublicOrigin | null {
+  if (!host) return null;
+  return admittedOrigins().get(host.trim().toLowerCase()) ?? null;
+}
+
+/**
+ * Keeps a page route to its own origin. On an admitted origin its page lives at the root, so
+ * "/<page><rest>" moves there with a 308 to "<rest>", and any other page is not served. Off an admitted
+ * origin this returns and the route behaves as upstream. The redirect is a path, never another host.
+ */
+export function GuardAdmittedPageRoute(
+  publicOrigin: PublicOrigin | null | undefined,
+  pagePath: string,
+  rest: string,
+  search = "",
+): void {
+  if (!publicOrigin) return;
+  if (pagePath === publicOrigin.pagePath) {
+    throw redirect(308, serverResolve(rest) + search);
+  }
+  throw error(404, "Page Not Found");
+}
+
+/**
+ * The admitted origin whose page shows every one of these monitors, for links built outside a request,
+ * such as subscriber mail. Null when nothing is admitted, there are no monitors (a global event), or no
+ * single admitted page shows them all; the caller then keeps the site URL.
+ */
+export async function PublicOriginForMonitors(monitorTags: string[]): Promise<PublicOrigin | null> {
+  const admitted = [...admittedOrigins().values()];
+  if (admitted.length === 0 || monitorTags.length === 0) return null;
+
+  const matches: PublicOrigin[] = [];
+  for (const candidate of admitted) {
+    const page = await db.getPageByPath(candidate.pagePath);
+    if (!page) continue;
+    const shown = new Set((await db.getActivePageMonitors(page.id)).map((m) => m.monitor_tag));
+    if (monitorTags.every((tag) => shown.has(tag))) matches.push(candidate);
+  }
+  return matches.length === 1 ? matches[0] : null;
+}
+
+/**
+ * Site URL for a subscriber mail about an incident or maintenance, shaped as siteDataToVariables builds
+ * it (base path and trailing slash): the admitted origin whose page shows all of its monitors, else
+ * `siteUrl`. A global event, or a failed lookup, keeps `siteUrl`; the mail must not be lost to it.
+ */
+export async function SubscriberMailSiteURL(
+  siteUrl: string,
+  isGlobal: boolean,
+  monitorTags: string[],
+): Promise<string> {
+  if (isGlobal) return siteUrl;
+  try {
+    const publicOrigin = await PublicOriginForMonitors(monitorTags);
+    return publicOrigin ? publicOrigin.origin + serverResolve("/") : siteUrl;
+  } catch (err) {
+    console.error("Error choosing the public origin for a subscriber mail:", err);
+    return siteUrl;
+  }
+}

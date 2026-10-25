@@ -2,10 +2,12 @@ import { GetSiteDataByKey } from "$lib/server/controllers/siteDataController.js"
 import { GetAllPages } from "$lib/server/controllers/pagesController.js";
 import { GetMonitors } from "$lib/server/controllers/monitorsController.js";
 import serverResolver from "$lib/server/resolver.js";
+import db from "$lib/server/db/db.js";
+import type { PublicOrigin } from "$lib/server/publicOrigins.js";
 import type { SitemapXMLConfig } from "$lib/types/site.js";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ locals }) => {
   const sitemap = (await GetSiteDataByKey("sitemap")) as SitemapXMLConfig | null;
   const mode = sitemap?.mode ?? "auto";
 
@@ -13,14 +15,16 @@ export const GET: RequestHandler = async () => {
     return new Response("Not found", { status: 404 });
   }
 
+  // An admitted public origin lists only its own page's URLs. The configured manual URLs belong to the
+  // site URL, and a sitemap may only name URLs on its own host.
+  if (locals.publicOrigin) {
+    const locs = await admittedOriginLocs(locals.publicOrigin);
+    return locs ? sitemapResponse(toUrlEntries(locs)) : new Response("Not found", { status: 404 });
+  }
+
   if (mode === "manual") {
     const urls = sitemap?.urls ?? [];
-    const urlEntries = urls
-      .filter((u) => u.loc.trim().length > 0)
-      .map((u) => `  <url>\n    <loc>${escapeXml(u.loc.trim())}</loc>\n  </url>`)
-      .join("\n");
-
-    return sitemapResponse(urlEntries);
+    return sitemapResponse(toUrlEntries(urls.map((u) => u.loc.trim()).filter((loc) => loc.length > 0)));
   }
 
   // auto mode
@@ -45,6 +49,37 @@ export const GET: RequestHandler = async () => {
   }
 
   // Add current and previous month events pages
+  for (const path of eventsMonthPaths()) {
+    locs.push(siteURL + serverResolver(path));
+  }
+
+  // Add any manual URLs configured alongside auto
+  const manualUrls = sitemap?.urls ?? [];
+  for (const u of manualUrls) {
+    if (u.loc.trim().length > 0) {
+      locs.push(u.loc.trim());
+    }
+  }
+
+  return sitemapResponse(toUrlEntries(locs));
+};
+
+// The admitted page at the root, its active visible monitors, and its events pages
+async function admittedOriginLocs(publicOrigin: PublicOrigin): Promise<string[] | null> {
+  const page = await db.getPageByPath(publicOrigin.pagePath);
+  if (!page) {
+    return null;
+  }
+  const paths = ["/"];
+  for (const pageMonitor of await db.getActivePageMonitors(page.id)) {
+    paths.push(`/monitors/${pageMonitor.monitor_tag}`);
+  }
+  paths.push(...eventsMonthPaths());
+  return paths.map((path) => publicOrigin.origin + serverResolver(path));
+}
+
+// Current and previous month events pages
+function eventsMonthPaths(): string[] {
   const now = new Date();
   const months = [
     "January",
@@ -63,21 +98,12 @@ export const GET: RequestHandler = async () => {
   const currentMonth = `${months[now.getUTCMonth()]}-${now.getUTCFullYear()}`;
   const prevDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   const previousMonth = `${months[prevDate.getUTCMonth()]}-${prevDate.getUTCFullYear()}`;
-  locs.push(siteURL + serverResolver(`/events/${currentMonth}`));
-  locs.push(siteURL + serverResolver(`/events/${previousMonth}`));
+  return [`/events/${currentMonth}`, `/events/${previousMonth}`];
+}
 
-  // Add any manual URLs configured alongside auto
-  const manualUrls = sitemap?.urls ?? [];
-  for (const u of manualUrls) {
-    if (u.loc.trim().length > 0) {
-      locs.push(u.loc.trim());
-    }
-  }
-
-  const urlEntries = locs.map((loc) => `  <url>\n    <loc>${escapeXml(loc)}</loc>\n  </url>`).join("\n");
-
-  return sitemapResponse(urlEntries);
-};
+function toUrlEntries(locs: string[]): string {
+  return locs.map((loc) => `  <url>\n    <loc>${escapeXml(loc)}</loc>\n  </url>`).join("\n");
+}
 
 function sitemapResponse(urlEntries: string): Response {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
