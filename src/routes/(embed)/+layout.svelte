@@ -14,7 +14,9 @@
 <svelte:head>
   <meta name="robots" content="noindex, nofollow" />
   <title>Kener Status</title>
-  <link rel="icon" href={data.favicon} />
+  {#if data.favicon}
+    <link rel="icon" href={data.favicon} />
+  {/if}
   {#if data.font?.cssSrc}
     <link rel="stylesheet" href={data.font.cssSrc} />
   {/if}

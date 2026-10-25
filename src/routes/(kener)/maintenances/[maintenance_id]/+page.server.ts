@@ -7,8 +7,9 @@ import {
 } from "$lib/server/controllers/maintenanceController.js";
 import db from "$lib/server/db/db";
 import type { MaintenanceEventRecord } from "$lib/server/db/dbimpl";
+import { GuardAdmittedEvent } from "$lib/server/publicOrigins.js";
 
-export const load: PageServerLoad = async ({ params, url, parent }) => {
+export const load: PageServerLoad = async ({ params, url, parent, locals }) => {
   const { maintenance_id } = params;
   let idType = "event";
 
@@ -54,6 +55,13 @@ export const load: PageServerLoad = async ({ params, url, parent }) => {
   // Fetch monitor tags for this maintenance
   const monitorRecords = await GetMaintenanceMonitors(maintenanceId);
   const monitorTags = monitorRecords.map((m) => m.monitor_tag);
+  await GuardAdmittedEvent(
+    locals.publicOrigin,
+    maintenance.is_global === "YES",
+    monitorTags,
+    `/maintenances/${eventIdNum}`,
+    url.search,
+  );
 
   // Fetch full monitor details (name, image, etc.)
   let affectedMonitors: Array<{

@@ -33,6 +33,15 @@ import { GET as rootFeed } from "./rss.xml/+server";
 import { GET as namedPageFeed } from "./[page_path]/rss.xml/+server";
 import { GET as monitorFeed } from "./monitors/[monitor_tag]/rss.xml/+server";
 import { GET as sitemap } from "./sitemap.xml/+server";
+import { GET as robots } from "./robots.txt/+server";
+import { load as loadRootEvents } from "./events/[MMMM]-[YYYY]/+page.server";
+import { load as loadMonitorPage } from "./monitors/[monitor_tag]/+page.server";
+import { load as loadIncidentPage } from "./incidents/[incident_id]/+page.server";
+import { load as loadMaintenancePage } from "./maintenances/[maintenance_id]/+page.server";
+import { GET as statusBadge } from "./badge/[tag]/status/+server";
+import { load as loadMonitorEmbed } from "../(embed)/embed/monitor-[tag]/+page.server";
+import { load as loadLiveEventsEmbed } from "../(embed)/embed/events/live/+page.server";
+import subscriptionPost from "$lib/server/api-server/subscription/post";
 
 const migrations = import.meta.glob<Knex.Migration>("/migrations/*.ts", { eager: true });
 const knex = (db as unknown as { knex: Knex }).knex;
@@ -319,6 +328,290 @@ describe("subscriber mail links outside a request", () => {
   });
 });
 
+describe("the admitted page as the product's own Home", () => {
+  let globalIncidentId: number;
+  let portfolioMaintenanceEventId: number;
+
+  // A loader event for `path` on `host`; each loader below reads only some of these
+  const pageEvent = (host: string, path: string, params: Record<string, string>) =>
+    ({
+      params,
+      url: new URL(`http://localhost${path}`),
+      locals: localsFor(host),
+      parent: () => layoutFor(host),
+    }) as never;
+  const monitorPage = (host: string, monitor_tag: string) =>
+    outcome(() => loadMonitorPage(pageEvent(host, `/monitors/${monitor_tag}`, { monitor_tag })));
+  const incidentPage = (host: string, id: number) =>
+    outcome(() => loadIncidentPage(pageEvent(host, `/incidents/${id}`, { incident_id: String(id) })));
+  const badge = (host: string, tag: string) =>
+    outcome(() =>
+      statusBadge({
+        params: { tag },
+        url: new URL(`http://localhost/badge/${tag}/status?style=flat`),
+        locals: localsFor(host),
+      } as never),
+    );
+  const liveEmbed = async (host: string, tags: string) => {
+    const data = (await loadLiveEventsEmbed(pageEvent(host, `/embed/events/live?tags=${tags}`, {}))) as {
+      incidents: Array<{ id: number }>;
+    };
+    return data.incidents.map((i) => i.id).sort();
+  };
+  const subscribe = async (host: string) => {
+    try {
+      const response = await subscriptionPost({
+        action: "subscription",
+        query: new URLSearchParams(),
+        cookies: anonymous,
+        headers: new Headers(),
+        body: { action: "no-such-action" },
+        publicOrigin: localsFor(host).publicOrigin,
+      });
+      return { status: response.status, message: "" };
+    } catch (e) {
+      const thrown = e as { status: number; body: { message: string } };
+      return { status: thrown.status, message: thrown.body.message };
+    }
+  };
+  const robotsFor = async (host: string) => (await robots({ locals: localsFor(host) } as never)).text();
+  const canonicalOf = (result: { body?: unknown }) => (result.body as { canonicalUrl: string | null }).canonicalUrl;
+
+  beforeAll(async () => {
+    await knex("site_data").insert([
+      { key: "logo", value: "/brand/works/assets/lockup-compact/on-dark.svg", data_type: "string" },
+      { key: "favicon", value: "/brand/works/assets/icon-favicon/on-dark.svg", data_type: "string" },
+      { key: "metaSiteTitle", value: "Portfolio status", data_type: "string" },
+      {
+        key: "subscriptionsSettings",
+        value: JSON.stringify({ enable: true, methods: { emails: { incidents: true, maintenances: true } } }),
+        data_type: "object",
+      },
+    ]);
+    await knex("pages")
+      .where({ page_path: "product" })
+      .update({
+        page_title: "Product status",
+        page_logo: "/brand/diffdevil/assets/wordmark/on-dark.svg",
+        page_settings_json: JSON.stringify({ metaPageDescription: "How the product is doing." }),
+      });
+
+    // A group on the product page whose member the page shows only inside the group
+    const monitor = { status: "ACTIVE", is_hidden: "NO" };
+    await knex("monitors").insert([
+      { ...monitor, tag: "product-api", name: "product-api", monitor_type: "NONE", type_data: "{}" },
+      {
+        ...monitor,
+        tag: "product-group",
+        name: "product-group",
+        monitor_type: "GROUP",
+        type_data: JSON.stringify({ monitors: [{ tag: "product-api" }], executionDelay: 1000 }),
+      },
+    ]);
+    const productPage = await knex("pages").where({ page_path: "product" }).first();
+    await knex("pages_monitors").insert({ page_id: productPage.id, monitor_tag: "product-group", position: 9 });
+
+    const now = GetNowTimestampUTC();
+    [globalIncidentId] = (
+      await knex("incidents").insert(
+        {
+          title: "Everything",
+          start_date_time: now - 600,
+          is_global: "YES",
+          incident_type: "INCIDENT",
+          status: "OPEN",
+        },
+        ["id"],
+      )
+    ).map((r: { id: number }) => r.id);
+
+    const [maintenanceId] = (
+      await knex("maintenances").insert(
+        {
+          title: "Portfolio move",
+          start_date_time: 1000,
+          rrule: "FREQ=DAILY;COUNT=1",
+          duration_seconds: 60,
+          is_global: "NO",
+        },
+        ["id"],
+      )
+    ).map((r: { id: number }) => r.id);
+    await knex("maintenance_monitors").insert({ maintenance_id: maintenanceId, monitor_tag: "portfolio-site" });
+    [portfolioMaintenanceEventId] = (
+      await knex("maintenances_events").insert(
+        { maintenance_id: maintenanceId, start_date_time: 1000, end_date_time: 1060, status: "COMPLETED" },
+        ["id"],
+      )
+    ).map((r: { id: number }) => r.id);
+  });
+
+  it("leads the shell with the page's title, logo, bundle favicon and meta, never the site's", async () => {
+    expect(await layoutFor(HOST.product)).toMatchObject({
+      siteName: "Product status",
+      isProductHome: true,
+      logo: "/brand/diffdevil/assets/wordmark/on-dark.svg",
+      favicon: "/brand/diffdevil/assets/icon-favicon/on-dark.svg",
+      metaSiteTitle: "Product status",
+      metaSiteDescription: "How the product is doing.",
+      socialPreviewImage: undefined,
+    });
+    for (const host of [HOST.portfolio, HOST.unknown]) {
+      expect(await layoutFor(host)).toMatchObject({
+        siteName: "Portfolio",
+        isProductHome: false,
+        logo: "/brand/works/assets/lockup-compact/on-dark.svg",
+        favicon: "/brand/works/assets/icon-favicon/on-dark.svg",
+        metaSiteTitle: "Portfolio status",
+      });
+    }
+  });
+
+  it("names its feed after the page", async () => {
+    expect((await feed(HOST.product, rootFeed)).body).toContain("<title>Product status — Incidents &amp; Maintenance");
+    expect((await feed(HOST.portfolio, rootFeed)).body).toContain("<title>Portfolio — Incidents &amp; Maintenance");
+  });
+
+  it("offers and accepts subscriptions only off an admitted origin", async () => {
+    expect((await layoutFor(HOST.product)).isSubsEnabled).toBe(false);
+    expect(await subscribe(HOST.product)).toEqual({
+      status: 400,
+      message: "Subscriptions are not available on this status page",
+    });
+    for (const host of [HOST.portfolio, HOST.unknown]) {
+      expect((await layoutFor(host)).isSubsEnabled).toBe(true);
+      // The request reaches the subscription actions, which reject this one
+      expect(await subscribe(host)).toEqual({ status: 400, message: "Invalid action" });
+    }
+  });
+
+  it("serves the page's monitors, group members included, and sends any other monitor to the site URL", async () => {
+    for (const tag of ["product-docs", "product-site", "product-group", "product-api"]) {
+      expect((await monitorPage(HOST.product, tag)).status).toBe(200);
+    }
+    expect(await monitorPage(HOST.product, "other-api")).toEqual({
+      status: 307,
+      location: `${PORTFOLIO}/monitors/other-api`,
+    });
+    expect(await feed(HOST.product, monitorFeed, { monitor_tag: "portfolio-site" })).toEqual({
+      status: 307,
+      location: `${PORTFOLIO}/monitors/portfolio-site/rss.xml`,
+    });
+    expect((await badge(HOST.product, "product-docs")).status).toBe(200);
+    expect(await badge(HOST.product, "other-api")).toEqual({
+      status: 307,
+      location: `${PORTFOLIO}/badge/other-api/status?style=flat`,
+    });
+    // "_" is every monitor of the instance: the site's, not the product's
+    expect(await badge(HOST.product, "_")).toEqual({
+      status: 307,
+      location: `${PORTFOLIO}/badge/_/status?style=flat`,
+    });
+    expect(
+      await outcome(() =>
+        loadMonitorEmbed(pageEvent(HOST.product, "/embed/monitor-other-api?theme=dark", { tag: "other-api" })),
+      ),
+    ).toEqual({ status: 307, location: `${PORTFOLIO}/embed/monitor-other-api?theme=dark` });
+  });
+
+  it("serves global events and the page's events, and sends any other event to the site URL", async () => {
+    expect((await incidentPage(HOST.product, productIncidentId)).status).toBe(200);
+    expect((await incidentPage(HOST.product, globalIncidentId)).status).toBe(200);
+    expect(await incidentPage(HOST.product, portfolioIncidentId)).toEqual({
+      status: 307,
+      location: `${PORTFOLIO}/incidents/${portfolioIncidentId}`,
+    });
+    const path = `/maintenances/${portfolioMaintenanceEventId}`;
+    const maintenance = await outcome(() =>
+      loadMaintenancePage(
+        pageEvent(HOST.product, `${path}?ref=x`, { maintenance_id: String(portfolioMaintenanceEventId) }),
+      ),
+    );
+    expect(maintenance).toEqual({ status: 307, location: `${PORTFOLIO}${path}?ref=x` });
+
+    // A foreign tag is dropped: asked only for it, the embed falls back to global events
+    const foreignOnly = await liveEmbed(HOST.product, "portfolio-site");
+    expect(foreignOnly).toContain(globalIncidentId);
+    expect(foreignOnly).not.toContain(portfolioIncidentId);
+    const mixed = await liveEmbed(HOST.product, "product-docs,portfolio-site");
+    expect(mixed).toContain(productIncidentId);
+    expect(mixed).not.toContain(portfolioIncidentId);
+    expect(await liveEmbed(HOST.portfolio, "portfolio-site")).toContain(portfolioIncidentId);
+  });
+
+  it("serves every monitor and event on the site URL and an unknown host, as upstream", async () => {
+    for (const host of [HOST.portfolio, HOST.unknown]) {
+      expect((await monitorPage(host, "other-api")).status).toBe(200);
+      expect((await incidentPage(host, portfolioIncidentId)).status).toBe(200);
+      expect((await badge(host, "other-api")).status).toBe(200);
+    }
+  });
+
+  it("refuses foreign content when the site URL is unset or is the admitted origin itself", async () => {
+    for (const value of [PRODUCT, ""]) {
+      await knex("site_data").where({ key: "siteURL" }).update({ value });
+      try {
+        expect((await monitorPage(HOST.product, "other-api")).status).toBe(404);
+      } finally {
+        await knex("site_data").where({ key: "siteURL" }).update({ value: PORTFOLIO });
+      }
+    }
+  });
+
+  it("names the admitted origin canonical, on its own host and on the site URL's page routes", async () => {
+    expect(canonicalOf(await rootPage(HOST.product))).toBe(`${PRODUCT}/`);
+    expect(canonicalOf(await namedPage(HOST.portfolio, "product"))).toBe(`${PRODUCT}/`);
+    expect(canonicalOf(await namedPage(HOST.portfolio, "other"))).toBeNull();
+    expect(canonicalOf(await rootPage(HOST.portfolio))).toBeNull();
+
+    const month = { MMMM: "October", YYYY: "2026" };
+    const rootEvents = (host: string) => outcome(() => loadRootEvents(pageEvent(host, "/events/October-2026", month)));
+    const pageEvents = (host: string) =>
+      outcome(() =>
+        loadNamedPageEvents(pageEvent(host, "/product/events/October-2026", { ...month, page_path: "product" })),
+      );
+    expect(canonicalOf(await rootEvents(HOST.product))).toBe(`${PRODUCT}/events/October-2026`);
+    expect(canonicalOf(await pageEvents(HOST.portfolio))).toBe(`${PRODUCT}/events/October-2026`);
+    expect(canonicalOf(await rootEvents(HOST.portfolio))).toBeNull();
+  });
+
+  it("names each host's own sitemap in robots.txt, and none when the sitemap is off", async () => {
+    expect(await robotsFor(HOST.product)).toContain(`\nSitemap: ${PRODUCT}/sitemap.xml\n`);
+    expect(await robotsFor(HOST.portfolio)).toContain(`\nSitemap: ${PORTFOLIO}/sitemap.xml\n`);
+    expect(await robotsFor(HOST.portfolio)).toContain("Disallow: /manage/");
+
+    await knex("site_data").insert({
+      key: "sitemap",
+      value: JSON.stringify({ mode: "off", urls: [] }),
+      data_type: "object",
+    });
+    try {
+      for (const host of Object.values(HOST)) {
+        const text = await robotsFor(host);
+        expect(text).not.toContain("Sitemap:");
+        expect(text).not.toContain("kener.ing");
+      }
+    } finally {
+      await knex("site_data").where({ key: "sitemap" }).del();
+    }
+  });
+
+  it("keeps identity and content on each of many interleaved requests' own origin", async () => {
+    const hosts = Array.from({ length: 12 }, (_, i) => Object.values(HOST)[i % 3]);
+    const results = await Promise.all(
+      hosts.map(async (host) => ({
+        host,
+        siteName: (await layoutFor(host)).siteName,
+        foreignMonitor: (await monitorPage(host, "other-api")).status,
+      })),
+    );
+    for (const { host, siteName, foreignMonitor } of results) {
+      expect(siteName).toBe(host === HOST.product ? "Product status" : "Portfolio");
+      expect(foreignMonitor).toBe(host === HOST.product ? 307 : 200);
+    }
+  });
+});
+
 describe("without KENER_PUBLIC_ORIGINS", () => {
   beforeAll(() => vi.stubEnv("KENER_PUBLIC_ORIGINS", ""));
   afterAll(() => vi.stubEnv("KENER_PUBLIC_ORIGINS", `${PRODUCT}=product`));
@@ -328,6 +621,21 @@ describe("without KENER_PUBLIC_ORIGINS", () => {
     expect((await layoutFor(HOST.product)).siteUrl).toBe(PORTFOLIO);
     expect(monitorTagsOf(await namedPage(HOST.product, "other"))).toEqual(["other-api"]);
     expect((await feed(HOST.product, rootFeed)).body as string).not.toContain(PRODUCT);
+  });
+
+  it("keeps the site's identity, every monitor and subscriptions on the product host", async () => {
+    expect(await layoutFor(HOST.product)).toMatchObject({
+      siteName: "Portfolio",
+      isProductHome: false,
+      isSubsEnabled: true,
+    });
+    const event = {
+      params: { monitor_tag: "other-api" },
+      url: new URL("http://localhost/monitors/other-api"),
+      locals: localsFor(HOST.product),
+      parent: () => layoutFor(HOST.product),
+    } as never;
+    expect((await outcome(() => loadMonitorPage(event))).status).toBe(200);
   });
 
   it("keeps the site URL in subscriber mail", async () => {

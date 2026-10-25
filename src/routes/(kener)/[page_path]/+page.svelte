@@ -116,6 +116,9 @@
 </script>
 
 <svelte:head>
+  {#if data.canonicalUrl}
+    <link rel="canonical" href={data.canonicalUrl} />
+  {/if}
   {#if data.metaPageTitle}
     <title>{data.metaPageTitle}</title>
     <meta property="og:title" content={data.metaPageTitle} />

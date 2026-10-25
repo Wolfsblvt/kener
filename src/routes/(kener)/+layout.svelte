@@ -25,7 +25,9 @@
 <Toaster />
 
 <svelte:head>
-  <link rel="icon" href={data.favicon} />
+  {#if data.favicon}
+    <link rel="icon" href={data.favicon} />
+  {/if}
   <link rel="alternate" type="application/rss+xml" title="RSS feed" href={rssHref} />
   {#if data.font?.cssSrc}
     <link rel="stylesheet" href={data.font.cssSrc} />

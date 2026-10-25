@@ -2,8 +2,9 @@ import type { PageServerLoad } from "./$types";
 import db from "$lib/server/db/db";
 
 import { GetNowTimestampUTC } from "$lib/server/tool";
+import { AdmittedPageMonitorTags } from "$lib/server/publicOrigins.js";
 
-export const load: PageServerLoad = async ({ params, parent, url }) => {
+export const load: PageServerLoad = async ({ params, parent, url, locals }) => {
   const ts = GetNowTimestampUTC();
   let showIncident = false;
   const theme = url.searchParams.get("theme");
@@ -26,6 +27,12 @@ export const load: PageServerLoad = async ({ params, parent, url }) => {
   const tagsParam = url.searchParams.get("tags");
   if (tagsParam) {
     tags = tagsParam.split(",").map((tag) => tag.trim());
+  }
+  // On an admitted public origin only its page's monitors are asked for; without tags this embed shows
+  // global events, which belong to every page
+  if (locals.publicOrigin) {
+    const shown = (await AdmittedPageMonitorTags(locals.publicOrigin)) ?? new Set<string>();
+    tags = tags.filter((tag) => shown.has(tag));
   }
   return {
     ...{

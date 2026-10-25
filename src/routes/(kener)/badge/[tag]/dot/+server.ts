@@ -7,8 +7,15 @@ import { GetLastMonitoringValue } from "$lib/server/cache/setGet.js";
 import { CurrentStatusOf } from "$lib/server/services/statusFreshness.js";
 import { GetMinuteStartNowTimestampUTC } from "$lib/server/tool.js";
 import type { RequestHandler } from "./$types";
+import { GuardAdmittedMonitor } from "$lib/server/publicOrigins.js";
 
-export const GET: RequestHandler = async ({ params, url }) => {
+export const GET: RequestHandler = async ({ params, url, locals }) => {
+  await GuardAdmittedMonitor(
+    locals.publicOrigin,
+    params.tag,
+    `/badge/${encodeURIComponent(params.tag)}/dot`,
+    url.search,
+  );
   let currentStatus: string;
   const { tag } = params;
   if (tag == "_") {

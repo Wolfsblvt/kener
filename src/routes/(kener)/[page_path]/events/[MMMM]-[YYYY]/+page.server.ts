@@ -2,7 +2,7 @@ import type { PageServerLoad } from "./$types";
 import { error } from "@sveltejs/kit";
 import { parse, isValid, getYear, startOfMonth, endOfMonth, addMonths, getUnixTime } from "date-fns";
 import { GetPageByPathWithMonitors } from "$lib/server/controllers/controller.js";
-import { GuardAdmittedPageRoute } from "$lib/server/publicOrigins.js";
+import { AdmittedCanonicalURL, GuardAdmittedPageRoute } from "$lib/server/publicOrigins.js";
 
 const MIN_YEAR = 2023;
 
@@ -44,5 +44,6 @@ export const load: PageServerLoad = async ({ params, parent, locals, url }) => {
 
   return {
     ...{ monthParam, monthStartTs, monthEndTs },
+    canonicalUrl: AdmittedCanonicalURL(locals.publicOrigin, params.page_path, `/events/${monthParam}`),
   };
 };

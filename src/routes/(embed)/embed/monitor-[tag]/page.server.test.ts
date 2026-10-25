@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { load } from "./+page.server";
 
 const run = (query: string) =>
-  load({ params: { tag: "kener" }, url: new URL(`http://localhost/embed/monitor-kener${query}`) } as Parameters<
-    typeof load
-  >[0]);
+  load({
+    params: { tag: "kener" },
+    url: new URL(`http://localhost/embed/monitor-kener${query}`),
+    locals: {},
+  } as Parameters<typeof load>[0]);
 
 describe("embed monitor load", () => {
   it.each([

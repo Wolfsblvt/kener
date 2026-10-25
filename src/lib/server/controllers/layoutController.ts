@@ -14,7 +14,7 @@ import {
 import type { EventDisplaySettings, GlobalPageVisibilitySettings, SiteDateTimeFormat } from "$lib/types/site.js";
 import serverResolve from "../resolver.js";
 import { ResolveEventListPlacement } from "$lib/clientTools";
-import type { PublicOrigin } from "../publicOrigins.js";
+import { AdmittedOriginIdentity, type PublicOrigin } from "../publicOrigins.js";
 
 export interface LayoutServerData {
   isMobile: boolean;
@@ -42,6 +42,8 @@ export interface LayoutServerData {
   navItems: Array<{ name: string; url: string; iconURL: string }>;
   siteName: string;
   siteUrl: string;
+  // True on an admitted public origin, where the page's own identity leads the shell
+  isProductHome: boolean;
   logo: string | undefined;
   favicon: string | undefined;
   footerHTML: string;
@@ -120,7 +122,8 @@ function NormalizeEventDisplaySettings(settings?: Partial<EventDisplaySettings>)
 }
 
 // publicOrigin: the admitted origin this request arrived on, if any. Its absolute links use that origin,
-// and its one page is exclusive: no page switcher, and "/" and the page's links stay on that page.
+// its one page is exclusive (no page switcher; "/" and the page's links stay on that page), the page's
+// title, logo, brand favicon and meta lead instead of the site's, and subscribing stays on the site URL.
 export async function GetLayoutServerData(
   cookies: Cookies,
   request: Request,
@@ -130,10 +133,11 @@ export async function GetLayoutServerData(
   const md = new MobileDetect(userAgent);
   const isMobile = !!md.mobile();
 
-  const [loggedInUser, siteData, userCounts] = await Promise.all([
+  const [loggedInUser, siteData, userCounts, productIdentity] = await Promise.all([
     GetLoggedInSession(cookies),
     GetAllSiteData(),
     GetUsersCount(),
+    publicOrigin ? AdmittedOriginIdentity(publicOrigin) : null,
   ]);
   const canSeeHiddenMonitors = await CanSeeHiddenMonitors(loggedInUser);
 
@@ -147,9 +151,11 @@ export async function GetLayoutServerData(
   const siteStatusColorsDark = siteData.colorsDark || siteStatusColors;
 
   // Check if subscription is enabled
+  // Subscriptions cover every page, so they are offered on the site URL only, never on an admitted origin
   let isSubsEnabled = false;
   const subsSetting = siteData.subscriptionsSettings;
   if (
+    !publicOrigin &&
     subsSetting &&
     subsSetting.enable &&
     (subsSetting.methods.emails.incidents || subsSetting.methods.emails.maintenance)
@@ -168,6 +174,7 @@ export async function GetLayoutServerData(
   const canSendEmail = IsEmailSetup();
   const globalPageVisibilitySettings =
     siteData.globalPageVisibilitySettings || seedSiteData.globalPageVisibilitySettings;
+  const favicon = productIdentity ? productIdentity.favicon : siteData.favicon;
   return {
     isMobile,
     isSetupComplete,
@@ -178,13 +185,14 @@ export async function GetLayoutServerData(
     siteStatusColors,
     siteStatusColorsDark,
     navItems: siteData.nav || [],
-    siteName: siteData.siteName || "Kener",
+    siteName: productIdentity?.name || siteData.siteName || "Kener",
     siteUrl: publicOrigin?.origin ?? (siteData.siteURL || ""),
-    logo: siteData.logo,
+    isProductHome: !!productIdentity,
+    logo: productIdentity ? productIdentity.logo : siteData.logo,
     // Browsers fetch <link rel="icon"> from the SSR HTML before hydration.
     // SvelteKit's resolve() uses a relative base on the app-root page, so
     // prefix KENER_BASE_PATH here instead of in the layout.
-    favicon: siteData.favicon ? serverResolve(siteData.favicon) : siteData.favicon,
+    favicon: favicon ? serverResolve(favicon) : favicon,
     footerHTML: siteData.footerHTML || "",
     isSubsEnabled,
     languageSetting,
@@ -196,13 +204,13 @@ export async function GetLayoutServerData(
     canSendEmail,
     announcement: siteData.announcement,
     eventDisplaySettings: NormalizeEventDisplaySettings(siteData.eventDisplaySettings),
-    socialPreviewImage: siteData.socialPreviewImage,
+    socialPreviewImage: productIdentity ? productIdentity.socialPreviewImage : siteData.socialPreviewImage,
     customCSS: siteData.customCSS,
     globalPageVisibilitySettings: publicOrigin
       ? { ...globalPageVisibilitySettings, showSwitcher: false, forceExclusivity: true }
       : globalPageVisibilitySettings,
     dateAndTimeFormat: siteData.dateAndTimeFormat || seedSiteData.dateAndTimeFormat,
-    metaSiteTitle: siteData.metaSiteTitle,
-    metaSiteDescription: siteData.metaSiteDescription,
+    metaSiteTitle: productIdentity ? productIdentity.metaTitle : siteData.metaSiteTitle,
+    metaSiteDescription: productIdentity ? productIdentity.metaDescription : siteData.metaSiteDescription,
   };
 }

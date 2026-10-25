@@ -14,9 +14,16 @@ import GC from "$lib/global-constants.js";
 import { GetStatusColor, GetStatusSummary, ParseLatency, ResolveSslExpiresAtMs } from "$lib/clientTools";
 import { AttachSslCacheFields, GetMonitorsParsed } from "$lib/server/controllers/monitorsController";
 import type { GroupMonitorTypeData } from "$lib/server/types/monitor";
+import { GuardAdmittedMonitor } from "$lib/server/publicOrigins.js";
 
-export const load: PageServerLoad = async ({ params, parent }) => {
+export const load: PageServerLoad = async ({ params, parent, locals, url }) => {
   const { monitor_tag } = params;
+  await GuardAdmittedMonitor(
+    locals.publicOrigin,
+    monitor_tag,
+    `/monitors/${encodeURIComponent(monitor_tag)}`,
+    url.search,
+  );
   const parentData = await parent();
   const is_hidden = parentData.canSeeHiddenMonitors ? undefined : "NO";
   const monitors = await GetMonitorsParsed({ tag: monitor_tag, status: "ACTIVE", is_hidden });

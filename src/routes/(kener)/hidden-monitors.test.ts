@@ -201,7 +201,12 @@ describe("hidden monitor billing-db, by viewer", () => {
   });
 
   it.each(viewers)("monitor page /monitors/billing-db for %s", async (viewer) => {
-    const event = { params: { monitor_tag: "billing-db" }, parent: async () => layouts[viewer] };
+    const event = {
+      params: { monitor_tag: "billing-db" },
+      url: new URL("http://localhost/monitors/billing-db"),
+      locals: {},
+      parent: async () => layouts[viewer],
+    };
     const result = loadMonitorPage(event as unknown as Parameters<typeof loadMonitorPage>[0]);
     if (expectedShows(viewer)) {
       await expect(result).resolves.toMatchObject({ monitorTag: "billing-db", monitorName: "Billing DB" });
@@ -229,7 +234,12 @@ describe("hidden monitor billing-db, by viewer", () => {
   });
 
   it.each(viewers)("incident page /incidents/{id} for %s", async (viewer) => {
-    const event = { params: { incident_id: String(incidentId) }, parent: async () => layouts[viewer] };
+    const event = {
+      params: { incident_id: String(incidentId) },
+      url: new URL(`http://localhost/incidents/${incidentId}`),
+      locals: {},
+      parent: async () => layouts[viewer],
+    };
     const data = await loadIncidentPage(event as unknown as Parameters<typeof loadIncidentPage>[0]);
     const tags = (data as { affectedMonitors: Array<{ monitor_tag: string }> }).affectedMonitors.map(
       (m) => m.monitor_tag,
@@ -242,6 +252,7 @@ describe("hidden monitor billing-db, by viewer", () => {
     const event = {
       params: { maintenance_id: String(maintenanceEventId) },
       url: new URL("http://localhost/"),
+      locals: {},
       parent: async () => layouts[viewer],
     };
     const data = await loadMaintenancePage(event as unknown as Parameters<typeof loadMaintenancePage>[0]);
