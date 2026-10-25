@@ -6,6 +6,7 @@ import type { UnauthorizedResponse, NotFoundResponse } from "$lib/types/api";
 import { GetMonitorsParsed } from "$lib/server/controllers/monitorsController";
 import GC from "$lib/global-constants";
 import { InstallEnvProxy } from "$lib/server/proxy";
+import { PublicOriginForHost } from "$lib/server/publicOrigins";
 
 // Dev runs the SvelteKit server and the scheduler as separate processes; each installs once.
 InstallEnvProxy();
@@ -52,6 +53,13 @@ function isFormContentType(request: Request): boolean {
   const type = request.headers.get("content-type")?.split(";", 1)[0].trim()?.toLowerCase() ?? "";
   return FORM_CONTENT_TYPES.includes(type);
 }
+
+// Resolves the admitted public origin (KENER_PUBLIC_ORIGINS) from the exact Host header, once per
+// request, into locals. Loaders read it from there, so one request's host never reaches another.
+const publicOriginHandle: Handle = async ({ event, resolve }) => {
+  event.locals.publicOrigin = PublicOriginForHost(event.request.headers.get("host"));
+  return resolve(event);
+};
 
 // Custom CSRF handler: validates Origin when present, allows requests when absent.
 // When Origin is absent (e.g. Referrer-Policy: no-referrer), security relies on
@@ -131,4 +139,4 @@ const privateCacheHandle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-export const handle = sequence(csrfHandle, privateCacheHandle, apiAuthHandle);
+export const handle = sequence(publicOriginHandle, csrfHandle, privateCacheHandle, apiAuthHandle);

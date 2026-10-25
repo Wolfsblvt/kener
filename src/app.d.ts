@@ -14,6 +14,8 @@ declare global {
       maintenance?: import("$lib/server/types/db").MaintenanceRecord;
       // Set by hooks.server.ts for /api/pages/:page_path/* routes
       page?: import("$lib/server/types/db").PageRecord;
+      // Set by hooks.server.ts when the Host header names an admitted public origin (KENER_PUBLIC_ORIGINS)
+      publicOrigin?: import("$lib/server/publicOrigins").PublicOrigin | null;
     }
 
     interface PageData {

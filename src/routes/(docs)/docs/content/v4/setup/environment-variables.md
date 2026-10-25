@@ -119,6 +119,36 @@ KENER_BASE_PATH=/status
 - Update your reverse proxy configuration to match
 - See [Reverse Proxy Setup](/docs/v4/guides/reverse-proxy) for nginx/Apache examples
 
+### KENER_PUBLIC_ORIGINS {#kener-public-origins}
+
+**Purpose**: Serve a status page as the home of its own domain, from the same Kener instance, database, monitors, incidents and subscribers.
+
+**Default**: unset (every domain serves the whole site with the [Site URL](/docs/v4/setup/site-configuration#quick-setup))
+
+**Example**:
+
+```bash
+# status.example.org serves the "example" page at /
+KENER_PUBLIC_ORIGINS=https://status.example.org=example
+
+# Several, comma-separated
+KENER_PUBLIC_ORIGINS=https://status.example.org=example,https://status.other.dev=other
+```
+
+A request whose `Host` header is an admitted host gets:
+
+- that page at `/`, its events at `/events/<Month>-<Year>` and its feed at `/rss.xml`
+- `/<page>` and its sub-paths answered with a `308` to the root path; other pages answer `404`
+- feed, sitemap and social-preview links on that origin, and no page switcher
+
+Subscriber emails about an incident or maintenance link to the admitted origin whose page shows all of its monitors; global events and events across pages keep the Site URL.
+
+**Important**:
+
+- Each entry is an `http(s)` origin with no path, `=`, and an existing page path. Invalid or repeated entries are logged and ignored.
+- Only the `Host` header is matched, exactly; `X-Forwarded-Host` is never read. Your reverse proxy must pass the original `Host` (nginx: `proxy_set_header Host $host;`, Caddy does by default).
+- Any other host, including an unknown one, behaves as without this variable.
+
 ### KENER_FORCE_LOCAL_LOGIN {#kener-force-local-login}
 
 **Purpose**: Emergency override that re-enables the local (email/password) login form even when it is disabled in the [OpenID Connect settings](/docs/v4/oidc).

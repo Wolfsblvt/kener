@@ -11,6 +11,7 @@
 import db from "$lib/server/db/db.js";
 import { GetAllSiteData } from "$lib/server/controllers/siteDataController.js";
 import type { IncidentForMonitorListWithComments, MaintenanceEventsMonitorList } from "$lib/server/types/db.js";
+import type { PublicOrigin } from "$lib/server/publicOrigins.js";
 
 export type RssFeedItemType = "incident" | "maintenance";
 
@@ -116,7 +117,8 @@ const FEED_MAX_ITEMS = 50;
 
 // Scope determines which monitors the feed covers.
 //   - page: scoped to a status page's monitor list (honors hidden-monitor
-//     stripping and globalPageVisibilitySettings.forceExclusivity when pagePath is null)
+//     stripping and, when pagePath is null, the admitted origin's page or
+//     globalPageVisibilitySettings.forceExclusivity)
 //   - monitor: scoped to a single monitor by tag (404 if hidden, inactive, or unknown)
 export type RenderRssFeedScope = { type: "page"; pagePath: string | null } | { type: "monitor"; tag: string };
 
@@ -124,11 +126,13 @@ export interface RenderRssFeedArgs {
   scope: RenderRssFeedScope;
   // Path of THIS feed under basePath, e.g. "/rss.xml" or "/monitors/foo/rss.xml".
   feedPath: string;
+  // The admitted public origin the request arrived on: links use it, and a root page feed covers its page.
+  publicOrigin?: PublicOrigin | null;
 }
 
 export async function renderRssFeedResponse(args: RenderRssFeedArgs): Promise<Response> {
   const siteData = await GetAllSiteData();
-  const siteURL = siteData.siteURL;
+  const siteURL = args.publicOrigin?.origin ?? siteData.siteURL;
   if (!siteURL) {
     return new Response("Not found", { status: 404 });
   }
@@ -144,6 +148,9 @@ export async function renderRssFeedResponse(args: RenderRssFeedArgs): Promise<Re
     monitorTags = [args.scope.tag];
   } else {
     let pagePath = args.scope.pagePath;
+    if (args.publicOrigin && pagePath === null) {
+      pagePath = args.publicOrigin.pagePath;
+    }
     if (!!siteData.globalPageVisibilitySettings?.forceExclusivity && pagePath === null) {
       pagePath = "";
     }

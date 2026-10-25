@@ -37,6 +37,11 @@ export default async function post(req: APIServerRequest): Promise<Response> {
   const { globalPageVisibilitySettings } = siteData;
   const isExclusivePageEnabled = !!globalPageVisibilitySettings?.forceExclusivity;
 
+  // An admitted public origin shows only its own page's events
+  if (req.publicOrigin) {
+    pagePath = req.publicOrigin.pagePath;
+  }
+
   if (isExclusivePageEnabled && !pagePath) {
     pagePath = "";
   }

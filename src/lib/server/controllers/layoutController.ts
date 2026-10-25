@@ -14,6 +14,7 @@ import {
 import type { EventDisplaySettings, GlobalPageVisibilitySettings, SiteDateTimeFormat } from "$lib/types/site.js";
 import serverResolve from "../resolver.js";
 import { ResolveEventListPlacement } from "$lib/clientTools";
+import type { PublicOrigin } from "../publicOrigins.js";
 
 export interface LayoutServerData {
   isMobile: boolean;
@@ -118,7 +119,13 @@ function NormalizeEventDisplaySettings(settings?: Partial<EventDisplaySettings>)
   };
 }
 
-export async function GetLayoutServerData(cookies: Cookies, request: Request): Promise<LayoutServerData> {
+// publicOrigin: the admitted origin this request arrived on, if any. Its absolute links use that origin,
+// and its one page is exclusive: no page switcher, and "/" and the page's links stay on that page.
+export async function GetLayoutServerData(
+  cookies: Cookies,
+  request: Request,
+  publicOrigin: PublicOrigin | null = null,
+): Promise<LayoutServerData> {
   const userAgent = request.headers.get("user-agent") ?? "";
   const md = new MobileDetect(userAgent);
   const isMobile = !!md.mobile();
@@ -159,6 +166,8 @@ export async function GetLayoutServerData(cookies: Cookies, request: Request): P
   const defaultSiteTheme = siteData.theme || "system";
   const font = siteData.font || { cssSrc: "", family: "" };
   const canSendEmail = IsEmailSetup();
+  const globalPageVisibilitySettings =
+    siteData.globalPageVisibilitySettings || seedSiteData.globalPageVisibilitySettings;
   return {
     isMobile,
     isSetupComplete,
@@ -170,7 +179,7 @@ export async function GetLayoutServerData(cookies: Cookies, request: Request): P
     siteStatusColorsDark,
     navItems: siteData.nav || [],
     siteName: siteData.siteName || "Kener",
-    siteUrl: siteData.siteURL || "",
+    siteUrl: publicOrigin?.origin ?? (siteData.siteURL || ""),
     logo: siteData.logo,
     // Browsers fetch <link rel="icon"> from the SSR HTML before hydration.
     // SvelteKit's resolve() uses a relative base on the app-root page, so
@@ -189,7 +198,9 @@ export async function GetLayoutServerData(cookies: Cookies, request: Request): P
     eventDisplaySettings: NormalizeEventDisplaySettings(siteData.eventDisplaySettings),
     socialPreviewImage: siteData.socialPreviewImage,
     customCSS: siteData.customCSS,
-    globalPageVisibilitySettings: siteData.globalPageVisibilitySettings || seedSiteData.globalPageVisibilitySettings,
+    globalPageVisibilitySettings: publicOrigin
+      ? { ...globalPageVisibilitySettings, showSwitcher: false, forceExclusivity: true }
+      : globalPageVisibilitySettings,
     dateAndTimeFormat: siteData.dateAndTimeFormat || seedSiteData.dateAndTimeFormat,
     metaSiteTitle: siteData.metaSiteTitle,
     metaSiteDescription: siteData.metaSiteDescription,

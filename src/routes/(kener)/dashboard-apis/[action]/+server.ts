@@ -3,7 +3,7 @@ import type { RequestHandler } from "./$types";
 import { getHandler } from "$lib/server/api-server";
 import type { APIServerRequest } from "$lib/server/types/api-server";
 
-export const POST: RequestHandler = async ({ params, request, url, cookies }) => {
+export const POST: RequestHandler = async ({ params, request, url, cookies, locals }) => {
   const { action } = params;
   const handler = getHandler(action, "post");
 
@@ -16,13 +16,14 @@ export const POST: RequestHandler = async ({ params, request, url, cookies }) =>
     query: url.searchParams,
     cookies,
     headers: request.headers,
+    publicOrigin: locals.publicOrigin,
     body: await request.json(),
   };
 
   return handler(apiRequest);
 };
 
-export const PUT: RequestHandler = async ({ params, request, url, cookies }) => {
+export const PUT: RequestHandler = async ({ params, request, url, cookies, locals }) => {
   const { action } = params;
   const handler = getHandler(action, "put");
 
@@ -35,13 +36,14 @@ export const PUT: RequestHandler = async ({ params, request, url, cookies }) => 
     query: url.searchParams,
     cookies,
     headers: request.headers,
+    publicOrigin: locals.publicOrigin,
     body: await request.json(),
   };
 
   return handler(apiRequest);
 };
 
-export const GET: RequestHandler = async ({ params, request, url, cookies }) => {
+export const GET: RequestHandler = async ({ params, request, url, cookies, locals }) => {
   const { action } = params;
   const handler = getHandler(action, "get");
 
@@ -54,12 +56,13 @@ export const GET: RequestHandler = async ({ params, request, url, cookies }) => 
     query: url.searchParams,
     cookies,
     headers: request.headers,
+    publicOrigin: locals.publicOrigin,
   };
 
   return handler(apiRequest);
 };
 
-export const DELETE: RequestHandler = async ({ params, request, url, cookies }) => {
+export const DELETE: RequestHandler = async ({ params, request, url, cookies, locals }) => {
   const { action } = params;
   const handler = getHandler(action, "delete");
 
@@ -72,6 +75,7 @@ export const DELETE: RequestHandler = async ({ params, request, url, cookies }) 
     query: url.searchParams,
     cookies,
     headers: request.headers,
+    publicOrigin: locals.publicOrigin,
   };
 
   return handler(apiRequest);
