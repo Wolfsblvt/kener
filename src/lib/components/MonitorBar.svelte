@@ -180,6 +180,7 @@
           tags={groupChildTags}
           days={days as number}
           endOfDayTodayAtTz={endOfDayTodayAtTz as number}
+          groupName={data.name}
         >
           {$t("Included Monitors (%count)", { count: String(groupChildTags.length) })}
         </GroupMonitorPopover>

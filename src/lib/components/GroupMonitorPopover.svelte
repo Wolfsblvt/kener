@@ -13,12 +13,14 @@
     tags: string[];
     days: number;
     endOfDayTodayAtTz: number;
+    /** The group's name. Read before the toggle label so several toggles on one page stay distinguishable. */
+    groupName?: string;
     children: Snippet;
   }
 
   // Wolfsblvt fork: group members expand inline below the group instead of in a drawer, and member groups
   // expand the same way. Members load only once the group is first opened.
-  let { tags, days, endOfDayTodayAtTz, children }: Props = $props();
+  let { tags, days, endOfDayTodayAtTz, groupName, children }: Props = $props();
   const regionId = $props.id();
   let isOpen = $state(false);
   let monitorBarPromiseByTag = $state<Partial<Record<string, Promise<MonitorBarResponse>>>>({});
@@ -47,6 +49,8 @@
     aria-controls={regionId}
     onclick={toggle}
   >
+    <!-- Prefixes the accessible name only; the visible label is unchanged and stays part of the name. -->
+    {#if groupName}<span class="sr-only">{groupName}:</span>{/if}
     {@render children()}
     <ChevronDown
       class="size-4 transition-transform duration-200 motion-reduce:transition-none {isOpen ? 'rotate-180' : ''}"
