@@ -1,8 +1,9 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import type { Snippet } from "svelte";
+  import { page } from "$app/state";
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import { buttonVariants } from "$lib/components/ui/button/index.js";
-  import * as Drawer from "$lib/components/ui/drawer/index.js";
   import { requestMonitorBar } from "$lib/client/monitor-bar-client";
   import type { MonitorBarResponse } from "$lib/server/api-server/monitor-bar/get";
   import MonitorBar from "$lib/components/MonitorBar.svelte";
@@ -15,55 +16,69 @@
     children: Snippet;
   }
 
+  // Wolfsblvt fork: group members expand inline below the group instead of in a drawer, and member groups
+  // expand the same way. Members load only once the group is first opened.
   let { tags, days, endOfDayTodayAtTz, children }: Props = $props();
+  const regionId = $props.id();
   let isOpen = $state(false);
-  let monitorBarPromiseByTag = $derived.by(() => {
-    if (!browser || !isOpen || tags.length === 0) {
-      return {} as Partial<Record<string, Promise<MonitorBarResponse>>>;
-    }
+  let monitorBarPromiseByTag = $state<Partial<Record<string, Promise<MonitorBarResponse>>>>({});
 
-    return Object.fromEntries(tags.map((tag) => [tag, requestMonitorBar(tag, days, endOfDayTodayAtTz)])) as Partial<
-      Record<string, Promise<MonitorBarResponse>>
-    >;
-  });
+  function toggle() {
+    isOpen = !isOpen;
+    if (isOpen && browser && Object.keys(monitorBarPromiseByTag).length === 0) {
+      monitorBarPromiseByTag = Object.fromEntries(
+        tags.map((tag) => [tag, requestMonitorBar(tag, days, endOfDayTodayAtTz)])
+      );
+    }
+  }
+
+  const childTagsOf = (tag: string): string[] => page.data.monitorGroupMembersByTag?.[tag] ?? [];
 </script>
 
-<div class="w-full">
-  <Drawer.Root bind:open={isOpen} direction="bottom">
-    <Drawer.Trigger
-      class={buttonVariants({
-        variant: "ghost",
-        size: "sm",
-        class: "rounded-btn bg-secondary w-full   text-xs"
-      })}
-    >
-      {@render children()}
-    </Drawer.Trigger>
-    <Drawer.Content class="max-h-[80vh]">
-      <Drawer.Header>
-        <Drawer.Title>{$t("Included Monitors (%count)", { count: String(tags.length) })}</Drawer.Title>
-      </Drawer.Header>
-      <div class="scrollbar-hidden flex flex-col overflow-y-auto px-4 pb-4">
-        {#if tags.length === 0}
-          <div class="text-muted-foreground p-4 text-sm">{$t("No monitors available.")}</div>
-        {:else}
-          {#each tags as tag, i (tag)}
-            <div class="{i < tags.length - 1 ? 'border-b' : ''} py-2 pb-4">
-              {#if monitorBarPromiseByTag[tag]}
-                {#await monitorBarPromiseByTag[tag]}
-                  <MonitorBar {tag} />
-                {:then monitorBarData}
-                  <MonitorBar {tag} prefetchedData={monitorBarData} />
-                {:catch err}
-                  <MonitorBar {tag} prefetchedError={err instanceof Error ? err.message : "Unknown error"} />
-                {/await}
-              {:else}
+<div class="kener-group w-full" data-state={isOpen ? "open" : "closed"}>
+  <button
+    type="button"
+    class={buttonVariants({
+      variant: "ghost",
+      size: "sm",
+      class: "rounded-btn bg-secondary kener-group-toggle w-full text-xs"
+    })}
+    aria-expanded={isOpen}
+    aria-controls={regionId}
+    onclick={toggle}
+  >
+    {@render children()}
+    <ChevronDown
+      class="size-4 transition-transform duration-200 motion-reduce:transition-none {isOpen ? 'rotate-180' : ''}"
+    />
+  </button>
+  <div id={regionId} class="kener-group-members mt-2 flex flex-col" hidden={!isOpen}>
+    {#if isOpen}
+      {#if tags.length === 0}
+        <div class="text-muted-foreground p-4 text-sm">{$t("No monitors available.")}</div>
+      {:else}
+        {#each tags as tag, i (tag)}
+          <div class="kener-group-member {i < tags.length - 1 ? 'border-b' : ''} py-2 pb-4">
+            {#if monitorBarPromiseByTag[tag]}
+              {#await monitorBarPromiseByTag[tag]}
                 <MonitorBar {tag} />
-              {/if}
-            </div>
-          {/each}
-        {/if}
-      </div>
-    </Drawer.Content>
-  </Drawer.Root>
+              {:then monitorBarData}
+                <MonitorBar
+                  {tag}
+                  prefetchedData={monitorBarData}
+                  groupChildTags={childTagsOf(tag)}
+                  {days}
+                  {endOfDayTodayAtTz}
+                />
+              {:catch err}
+                <MonitorBar {tag} prefetchedError={err instanceof Error ? err.message : "Unknown error"} />
+              {/await}
+            {:else}
+              <MonitorBar {tag} />
+            {/if}
+          </div>
+        {/each}
+      {/if}
+    {/if}
+  </div>
 </div>
