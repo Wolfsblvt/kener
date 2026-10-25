@@ -2,13 +2,11 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Knex } from "knex";
 import type { GroupMonitor, GroupMonitorMember } from "../types/monitor";
 
-// The real monitor and monitoring-data reads against in-memory SQLite. The cache passes through to its fetcher, as
+// The real monitor and monitoring-data reads against in-memory SQLite, or the engine in TEST_DATABASE_URL. The cache passes through to its fetcher, as
 // on a cache miss, so members' latest results come from the database the way Kener falls back to it.
 vi.mock("$lib/server/db/db", async () => {
-  const { default: DbImpl } = await import("$lib/server/db/dbimpl");
-  return {
-    default: new DbImpl({ client: "better-sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true }),
-  };
+  const { CreateTestDb } = await import("$lib/server/db/testDatabase");
+  return { default: await CreateTestDb() };
 });
 
 vi.mock("$lib/server/cache/cache", () => ({

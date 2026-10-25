@@ -1,4 +1,5 @@
 import { Cron } from "croner";
+import GC from "../../global-constants.js";
 
 const MINUTE_MS = 60_000;
 const LONGEST_LOOKBACK_MS = 400 * 24 * 60 * MINUTE_MS;
@@ -40,4 +41,18 @@ export function IsCurrentResult(cron: string | null | undefined, resultTs: numbe
   if (!cron) return false;
   const previousRunMinute = PreviousScheduledMinute(cron, nowTs * 1000 + MINUTE_MS - 1);
   return previousRunMinute !== null && resultTs >= previousRunMinute;
+}
+
+/**
+ * The status a monitor's latest result supports right now: that result's own status when it is current, otherwise
+ * NO_DATA. Badges and other current-status readers use this so a missing, NO_DATA or last-known result is shown as
+ * unknown rather than as whatever the monitor last reported.
+ */
+export function CurrentStatusOf(
+  cron: string | null | undefined,
+  latest: { status?: string | null; timestamp: number } | null | undefined,
+  nowTs: number,
+): string {
+  if (!latest?.status || !IsCurrentResult(cron, latest.timestamp, nowTs)) return GC.NO_DATA;
+  return latest.status;
 }

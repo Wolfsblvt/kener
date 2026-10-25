@@ -2,10 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import type { Knex } from "knex";
 
 vi.mock("$lib/server/db/db", async () => {
-  const { default: DbImpl } = await import("$lib/server/db/dbimpl");
-  return {
-    default: new DbImpl({ client: "better-sqlite3", connection: { filename: ":memory:" }, useNullAsDefault: true }),
-  };
+  const { CreateTestDb } = await import("$lib/server/db/testDatabase");
+  return { default: await CreateTestDb() };
 });
 
 vi.mock("$lib/server/cache/cache", () => ({
@@ -35,6 +33,8 @@ beforeAll(async () => {
       getMigration: async (name: string) => migrations[name],
     },
   });
+  await knex("pages_monitors").del();
+  await knex("pages").where("page_path", "").del();
   await knex("pages").insert({ page_path: "", page_title: "Home", page_header: "Home" });
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW * 1000 + 30_000);
