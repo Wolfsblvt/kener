@@ -1,7 +1,17 @@
 {
-  "meaning": "Brand bundles this fork serves at /brand/<id>/. Each pin is the owning repository's exact carrier commit containing brand/bundle/<id>/. Refresh with `node wolf/brand/pull.mjs`; never edit vendor/brand by hand.",
+  "meaning": "Brand bundles this fork serves at /brand/<id>/. Each pin is the owning repository's exact carrier commit containing brand/bundle/<id>/, and the bundleSha256 of the bundle fetched from it. Change a commit, then refresh with `node wolf/brand/pull.mjs`, which records the bundleSha256; never edit vendor/brand or bundleSha256 by hand.",
   "bundles": [
-    { "id": "works", "repository": "Wolfsblvt/wolfsblvt.works", "commit": "69630063e7f7f3af3f3f13eb019a56db6c438efa" },
-    { "id": "diffdevil", "repository": "Wolfsblvt/diffdevil", "commit": "e35927e78ba9a51a8a3f142ee21af0de7f220f4f" }
+    {
+      "id": "works",
+      "repository": "Wolfsblvt/wolfsblvt.works",
+      "commit": "69630063e7f7f3af3f3f13eb019a56db6c438efa",
+      "bundleSha256": "e203e181f0a53eab8a7b3fd5077b6e8487a16f84493c0f86760aa0a74929ee95"
+    },
+    {
+      "id": "diffdevil",
+      "repository": "Wolfsblvt/diffdevil",
+      "commit": "e35927e78ba9a51a8a3f142ee21af0de7f220f4f",
+      "bundleSha256": "a5fb19221adbf34ffb3a06139064d197eaf3832472cdfef0618b3249033f6f21"
+    }
   ]
 }
