@@ -8,7 +8,12 @@
   import Loader from "@lucide/svelte/icons/loader";
   import PlayIcon from "@lucide/svelte/icons/play";
   import type { MonitorRecord } from "$lib/server/types/db.js";
-  import type { GroupMonitorTypeData, MonitoringResult } from "$lib/server/types/monitor.js";
+  import type {
+    GroupMemberRole,
+    GroupMonitorMember,
+    GroupMonitorTypeData,
+    MonitoringResult
+  } from "$lib/server/types/monitor.js";
   import type { DockerConnectionDefaults } from "$lib/types/docker.js";
   import { MONITOR_TYPES, type MonitorType } from "$lib/types/monitor.js";
   import { toast } from "svelte-sonner";
@@ -77,16 +82,16 @@
   function normalizeGroupTypeData(raw: unknown): GroupMonitorTypeData {
     const candidate = (raw ?? {}) as Record<string, unknown>;
     const monitors = Array.isArray(candidate.monitors)
-      ? (candidate.monitors as Array<{ tag?: string; weight?: number }>).reduce<Array<{ tag: string; weight: number }>>(
-          (acc, monitor) => {
-            if (monitor && typeof monitor.tag === "string" && monitor.tag.trim().length > 0) {
-              const weight = typeof monitor.weight === "number" && Number.isFinite(monitor.weight) ? monitor.weight : 0;
-              acc.push({ tag: monitor.tag, weight });
-            }
-            return acc;
-          },
-          []
-        )
+      ? (candidate.monitors as Array<{ tag?: string; weight?: number; role?: GroupMemberRole }>).reduce<
+          GroupMonitorMember[]
+        >((acc, monitor) => {
+          if (monitor && typeof monitor.tag === "string" && monitor.tag.trim().length > 0) {
+            const weight = typeof monitor.weight === "number" && Number.isFinite(monitor.weight) ? monitor.weight : 0;
+            // Wolfsblvt fork: roles are set through the API, so saving here must carry them through.
+            acc.push(monitor.role ? { tag: monitor.tag, weight, role: monitor.role } : { tag: monitor.tag, weight });
+          }
+          return acc;
+        }, [])
       : [];
 
     const latencyCalculation = isGroupLatencyCalculation(candidate.latencyCalculation)
