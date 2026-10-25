@@ -147,6 +147,11 @@
         status: 1=UP, between 0 and 1=DEGRADED, 0=DOWN.
       </p>
       <p class="text-muted-foreground text-xs">
+        Members can also carry a required or supporting role, set through the API. As soon as one does, weights are
+        ignored: a required member DOWN makes the group DOWN, a required member in maintenance makes it MAINTENANCE, and
+        any other member that is not UP makes it DEGRADED. Saving here keeps the roles already set.
+      </p>
+      <p class="text-muted-foreground text-xs">
         Select at least {MIN_SELECTED_MONITORS} monitors. Weights must sum to 1.
       </p>
     </div>

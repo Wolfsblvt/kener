@@ -1,9 +1,9 @@
 ---
 title: Group Monitor
-description: Combine multiple monitors into a weighted aggregate status
+description: Combine multiple monitors into a weighted or role-based aggregate status
 ---
 
-Group monitors aggregate member monitor status and latency into one monitor.
+Group monitors aggregate member monitor status and latency into one monitor. By default the status is a weighted score; give members a `role` to roll it up by what each member means for the group instead ([Member roles](#member-roles)).
 
 ## Minimum setup {#minimum-setup}
 
@@ -23,7 +23,7 @@ Member statuses are normalized to a 0–1 scale:
 - `DEGRADED = 0.5`
 - `DOWN = 0`
 
-Members in `MAINTENANCE` are treated as `UP` (score `1`) and do not affect the group status.
+Members in `MAINTENANCE` are treated as `UP` (score `1`) and do not affect the group status. This scoring applies while no member has a `role`.
 
 Weighted score:
 
@@ -45,6 +45,43 @@ Mapped group status:
 4 × 0.2 × 1 (UP) + 1 × 0.2 × 0 (DOWN) = 0.8 → DEGRADED
 ```
 
+## Member roles {#member-roles}
+
+Set `role` on a member when its failure means something specific for the group: `required` (people cannot use the group without it) or `supporting` (the group works without it, but worse). Weights are then ignored for the status.
+
+As soon as one member has a `role`, the group takes the first matching row. A member without a `role` counts as `required`.
+
+| Order | When                                                  | Group status  |
+| :---- | :---------------------------------------------------- | :------------ |
+| 1     | every member with data is `DOWN`                      | `DOWN`        |
+| 2     | a `required` member is `DOWN`                         | `DOWN`        |
+| 3     | every member with data is in `MAINTENANCE`            | `MAINTENANCE` |
+| 4     | a `required` member is in `MAINTENANCE`               | `MAINTENANCE` |
+| 5     | any other member is not `UP` (including `supporting`) | `DEGRADED`    |
+| 6     | every member is `UP`                                  | `UP`          |
+
+Members that have no data yet are left out. A group where no member has data is `DOWN`. Latency is calculated as before and does not depend on roles.
+
+Use exactly `required` or `supporting`: the API does not validate the value, and any other value counts as `supporting`. Weights must still sum to `1`, as in [Minimum setup](#minimum-setup).
+
+Roles are set through the API. The group editor in the dashboard has no role control, but it keeps the roles already set when you save:
+
+```json
+{
+    "monitor_type": "GROUP",
+    "type_data": {
+        "monitors": [
+            { "tag": "web", "weight": 0.5, "role": "required" },
+            { "tag": "search", "weight": 0.5, "role": "supporting" }
+        ],
+        "executionDelay": 1000,
+        "latencyCalculation": "AVG"
+    }
+}
+```
+
+With this setup `search` being `DOWN` makes the group `DEGRADED`, and `web` being `DOWN` makes it `DOWN`.
+
 ## Latency aggregation {#latency-aggregation}
 
 Group latency uses selected mode:
@@ -63,11 +100,11 @@ Group latency uses selected mode:
 
 ## Configuration fields {#configuration-fields}
 
-| Field                | Type                   | Default | Notes                                          |
-| :------------------- | :--------------------- | :------ | :--------------------------------------------- |
-| `monitors`           | `Array<{tag, weight}>` | `[]`    | Required, min 2                                |
-| `executionDelay`     | `number`               | `1000`  | ms to wait before aggregating; must be >= 1000 |
-| `latencyCalculation` | `AVG\|MAX\|MIN`        | `AVG`   |                                                |
+| Field                | Type                          | Default | Notes                                                 |
+| :------------------- | :---------------------------- | :------ | :---------------------------------------------------- |
+| `monitors`           | `Array<{tag, weight, role?}>` | `[]`    | Required, min 2; `role` is `required` or `supporting` |
+| `executionDelay`     | `number`                      | `1000`  | ms to wait before aggregating; must be >= 1000        |
+| `latencyCalculation` | `AVG\|MAX\|MIN`               | `AVG`   |                                                       |
 
 ## Example {#example}
 
@@ -91,4 +128,5 @@ Group latency uses selected mode:
 - **Cannot save**: verify weights sum to `1`, min member count, and delay >= `1000`
 - **Unexpected stale status (cron)**: increase `executionDelay` so member checks finish before the group aggregates
 - **Unexpected stale status (API updates)**: ensure you are running a version that updates the cache on API writes — older versions only updated the cache from cron, causing the group to miss API-driven status changes
-- **Group too sensitive/lenient**: adjust weights — higher weight on critical monitors makes their failure impact the group score more
+- **Group too sensitive/lenient**: adjust weights — higher weight on critical monitors makes their failure impact the group score more. With roles, weights are ignored: change a member's `role` instead
+- **Group is `DOWN` with no failing member**: with roles, a group where no member has data yet is `DOWN`. Check that the members are active and have run
