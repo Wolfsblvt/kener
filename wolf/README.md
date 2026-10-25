@@ -22,7 +22,8 @@ Replay these patches in order:
 | Patch | Files | What it changes |
 | --- | --- | --- |
 | Fork contract | `wolf/`, `AGENTS.md` (fork section) | This document and the agent entry. |
-| Role-aware group rollup | `src/lib/server/services/groupCall.ts`, `src/lib/server/types/monitor.ts`, `MonitorTypeCard.svelte` (group editor), `monitor-group.svelte`, `docs/content/v4/monitors/group.md` | Group members may carry `role: "required" \| "supporting"`. A required member down makes the group down, required maintenance makes it maintenance, any other non-up member degrades it; all members down or in maintenance carry through. Groups without roles keep upstream's weighted score unchanged. Roles are set through the API; the group editor keeps them when it saves, and the docs and editor help describe the rollup. |
+| Role-aware group rollup | `src/lib/server/services/groupCall.ts`, `src/lib/server/services/statusFreshness.ts`, `src/lib/server/queues/monitorExecuteQueue.ts`, `src/lib/server/types/monitor.ts`, `MonitorTypeCard.svelte` (group editor), `monitor-group.svelte`, `docs/content/v4/monitors/group.md` | Group members may carry `role: "required" \| "supporting"`. Then every configured member counts, and a member without a current result (none, `NO_DATA`, or older than its previous scheduled run) is unknown. All unknown is `NO_DATA`; all down is `DOWN`; a required member down is `DOWN`; a required member unknown is `NO_DATA`, never green and never an invented outage; all or required maintenance is `MAINTENANCE`; any other non-up member, including an unknown supporting one, degrades it. A group's default status does not replace that `NO_DATA`. Groups without roles keep upstream's weighted score unchanged. Roles are set through the API; the group editor keeps them when it saves, and the docs and editor help describe the rollup. |
+| Truthful page summary | `src/lib/server/controllers/dashboardController.ts`, `src/lib/server/services/statusFreshness.ts`, `src/lib/global-constants.ts`, `src/lib/locales/en.json`, `docs/content/v4/sharing.md` | The page banner counts a monitor without a current result as unknown, never as up. Known-up plus unknown reads "Some Statuses Unavailable" instead of "All Systems Operational". The `_` all-monitors badge is unchanged. |
 | Inline group expansion | `src/lib/components/GroupMonitorPopover.svelte`, `MonitorBar.svelte`, `MonitorOverview.svelte`, `src/lib/server/controllers/dashboardController.ts` | "Included Monitors (n)" becomes a disclosure button (`aria-expanded`, `aria-controls`) that expands members inline instead of in a drawer, and its accessible name starts with the group name. Member groups expand the same way, so page data carries nested group membership. Members load on first open. `GroupMonitorPopover.svelte.test.ts` covers the disclosure and keyboard behavior. |
 | Theme-aware history bars | `src/lib/components/StatusBarCalendar.svelte`, `MinuteGrid.svelte` | The history calendar and the per-minute grid use `colorsDark` in dark mode; the calendar takes the no-data colour from the theme's `--muted`. |
 | Product brand bundles | `wolf/brand/`, `vendor/brand/`, `Dockerfile`, `.gitattributes` | See below. |
@@ -36,7 +37,7 @@ Each patch is independent except that inline expansion reuses upstream's member 
 3. Replay the patch series above in order, preserving source authorship.
 4. Resolve conflicts inside the patch that owns the behavior. Record any changed upstream seam in the commit message or this document.
 5. Currentize only versioned examples, the current branch statement and the disposable image tag.
-6. Run the brand byte check, `npm run check`, and `npm test` with the release's supported Node version.
+6. Run the brand byte check and its test (`node --test wolf/brand/pull.test.mjs`), `npm run check`, and `npm test` with the release's supported Node version.
 7. Build and smoke one disposable local image. Do not publish it merely to prove the source builds.
 8. Compare the final branch against the exact upstream cut. The only delta should be the maintained patch series and current fork documentation.
 9. Move the repository default branch only after qualification. Retain the previous `wolf/v...` branch.
@@ -48,12 +49,12 @@ This is deliberately a bounded replay, not an accumulating merge branch and not 
 
 Product identities come byte for byte from each product's own repository, following the Leitsatz Brand Bundle Contract. This fork never edits or redraws them.
 
-- [`brand/pins.json`](brand/pins.json) names each bundle's owning repository and exact carrier commit.
-- `node wolf/brand/pull.mjs` fetches `brand/bundle/<id>/` at each pin into `vendor/brand/<id>/` and validates it with the shared validator (vendored from `Wolfsblvt/wolf-leitsatz@c82a6426a7f793f7cf9968f2390c282945c1c659`, `packages/leitsatz-core/source/skills/brand-assets/`).
-- The image build runs `node wolf/brand/pull.mjs --check`, which fails on any changed byte, then copies `vendor/brand` into `static/brand`. Kener serves the bundles same-origin at `/brand/<id>/...`.
+- [`brand/pins.json`](brand/pins.json) names each bundle's owning repository, exact carrier commit, and the `bundleSha256` of the bundle at that commit.
+- `node wolf/brand/pull.mjs` fetches `brand/bundle/<id>/` at each pin into `vendor/brand/<id>/`, validates it with the shared validator (vendored from `Wolfsblvt/wolf-leitsatz@c82a6426a7f793f7cf9968f2390c282945c1c659`, `packages/leitsatz-core/source/skills/brand-assets/`), and records the fetched `bundleSha256` in the pin.
+- The image build runs `node wolf/brand/pull.mjs --check`, which validates the committed bundle and fails unless its `bundleSha256` is the one recorded in the pin. A bundle edited outside its owning repository fails even when its own hashes agree. The build then copies `vendor/brand` into `static/brand`. Kener serves the bundles same-origin at `/brand/<id>/...`.
 - `.gitattributes` keeps `vendor/brand/**` byte-exact.
 
-To adopt a new identity version, update the pin, run the pull, review the diff and commit. To add a product, add its pin; its repository must already export a bundle.
+To adopt a new identity version, update the pin's commit, run the pull, review the diff (bundle and recorded `bundleSha256`) and commit. `node --test wolf/brand/pull.test.mjs` proves the check refuses a self-consistent bundle that is not the pinned one. To add a product, add its pin; its repository must already export a bundle.
 
 ## Verify and build
 
