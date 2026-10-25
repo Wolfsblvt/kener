@@ -1,3 +1,7 @@
+## Wolfsblvt fork
+
+This is the Wolfsblvt fork of Kener, maintained by Wolf Ops. Before changing anything, read [`wolf/README.md`](wolf/README.md): it defines the branch model, the patch series on top of the upstream release, the bounded upgrade process, and the product brand bundles. Upstream's instructions below still apply to the code itself.
+
 # Kener — Agent Instructions
 
 ## Run
