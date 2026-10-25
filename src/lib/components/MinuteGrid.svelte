@@ -51,11 +51,15 @@
   });
   let rowHeight = $derived(squareSize + SQUARE_GAP);
 
-  // Colors from page data
-  const colorUp = $derived(page.data.siteStatusColors?.UP || "#22c55e");
-  const colorDown = $derived(page.data.siteStatusColors?.DOWN || "#ef4444");
-  const colorDegraded = $derived(page.data.siteStatusColors?.DEGRADED || "#eab308");
-  const colorMaintenance = $derived(page.data.siteStatusColors?.MAINTENANCE || "#3b82f6");
+  // Colors from page data. The canvas cannot read the theme's CSS variables, so it follows the active theme like
+  // StatusBarCalendar does (Wolfsblvt fork: upstream always painted the light set).
+  const statusColors = $derived(
+    (mode.current === "dark" ? page.data.siteStatusColorsDark : null) || page.data.siteStatusColors
+  );
+  const colorUp = $derived(statusColors?.UP || "#22c55e");
+  const colorDown = $derived(statusColors?.DOWN || "#ef4444");
+  const colorDegraded = $derived(statusColors?.DEGRADED || "#eab308");
+  const colorMaintenance = $derived(statusColors?.MAINTENANCE || "#3b82f6");
 
   // Organize minutes into sections
   interface Section {
