@@ -209,16 +209,15 @@ export function AdmittedCanonicalURL(
 export interface AdmittedIdentity {
   name: string;
   logo: string | undefined;
-  favicon: string | undefined;
   metaTitle: string | undefined;
   metaDescription: string | undefined;
   socialPreviewImage: string | undefined;
 }
 
 /**
- * The admitted page's identity: its title and logo, the favicon of the brand bundle its logo comes from,
- * and its meta and social preview settings. Null when the page does not exist. Nothing falls back to the
- * site's name, logo or favicon; an unset value stays unset.
+ * The admitted page's identity: its title and logo, and its meta and social preview settings. Null when the
+ * page does not exist. Nothing falls back to the site's name or logo; an unset value stays unset. The layout
+ * takes the favicon from the brand bundle the logo comes from (BrandFavicon).
  */
 export async function AdmittedOriginIdentity(publicOrigin: PublicOrigin): Promise<AdmittedIdentity | null> {
   const page = await db.getPageByPath(publicOrigin.pagePath);
@@ -234,40 +233,10 @@ export async function AdmittedOriginIdentity(publicOrigin: PublicOrigin): Promis
   return {
     name: page.page_title,
     logo: page.page_logo || undefined,
-    favicon: BrandFavicon(page.page_logo),
     metaTitle: text(settings.metaPageTitle) ?? page.page_title,
     metaDescription: text(settings.metaPageDescription),
     socialPreviewImage: text(settings.socialPagePreviewImage),
   };
-}
-
-interface BrandManifest {
-  assets?: Array<{
-    role?: string;
-    variants?: Array<{ appearance?: string; representations?: Array<{ format?: string; file?: { path?: string } }> }>;
-  }>;
-}
-
-// The product brand bundles this fork vendors and serves at /brand/<id>/ (wolf/brand), read at build time
-const brandManifests = import.meta.glob<BrandManifest>("/vendor/brand/*/manifest.json", {
-  eager: true,
-  import: "default",
-});
-
-/**
- * The SVG favicon of the brand bundle a logo is served from, in the logo's appearance: for
- * "/brand/<id>/assets/wordmark/on-dark.svg", that bundle's `icon.favicon` on-dark SVG. Undefined for a
- * logo outside a vendored bundle, or a bundle without a favicon.
- */
-export function BrandFavicon(logo: string | null | undefined): string | undefined {
-  const match = logo?.match(/^\/brand\/([a-z0-9-]+)\/assets\/[^/]+\/([^/]+)$/);
-  if (!match) return undefined;
-  const [, id, file] = match;
-  const favicon = brandManifests[`/vendor/brand/${id}/manifest.json`]?.assets?.find((a) => a.role === "icon.favicon");
-  const variants = favicon?.variants ?? [];
-  const variant = variants.find((v) => v.appearance && file.startsWith(v.appearance)) ?? variants[0];
-  const path = variant?.representations?.find((r) => r.format === "svg")?.file?.path;
-  return path ? `/brand/${id}/${path}` : undefined;
 }
 
 /**
