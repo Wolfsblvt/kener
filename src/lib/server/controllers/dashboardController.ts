@@ -1,6 +1,7 @@
 import db from "../db/db.js";
 import { GetMinuteStartNowTimestampUTC, BeginningOfMinute, BeginningOfDay } from "../tool.js";
 import { GetPageByPathWithMonitors, GetLatestMonitoringDataAllActive } from "./controller.js";
+import { GetPageShownMonitorTags } from "./pagesController.js";
 import { GetMonitorsParsed } from "./monitorsController.js";
 import { GetStatusSummary, GetStatusBgColor, CollapseStatusCounts } from "../../clientTools";
 import { IsCurrentResult } from "../services/statusFreshness.js";
@@ -156,6 +157,8 @@ export interface PageDashboardData {
   ongoingMaintenances: MaintenanceEventsMonitorList[];
   upcomingMaintenances: MaintenanceEventsMonitorList[];
   monitorTags: string[];
+  /** The page's monitors and the members of its groups, whose events the page lists. */
+  eventMonitorTags: string[];
   monitorGroupMembersByTag: Record<string, string[]>;
   pageDetails: PageRecordTyped;
   socialPagePreviewImage?: string;
@@ -387,6 +390,7 @@ export const GetPageDashboardData = async (
       ongoingMaintenances: [],
       upcomingMaintenances: [],
       monitorTags,
+      eventMonitorTags: [],
       monitorGroupMembersByTag: {},
       pageDetails: pageDetailsTyped,
       socialPagePreviewImage,
@@ -394,6 +398,9 @@ export const GetPageDashboardData = async (
       metaPageDescription,
     };
   }
+  // An event on a group member belongs to the page that shows its group. Events leave out hidden monitors
+  // for every viewer, so the signed-in view lists the same ones.
+  const eventMonitorTags = await GetPageShownMonitorTags(pageDetails.id);
   const eventSettings = layoutData.eventDisplaySettings;
   const showInlineEvents = eventSettings.showInlineEvents === true;
   // Fetch all dashboard data in parallel (respecting feature toggles)
@@ -405,14 +412,14 @@ export const GetPageDashboardData = async (
       is_hidden: layoutData.canSeeHiddenMonitors ? undefined : "NO",
     }),
     showInlineEvents && eventSettings.incidents.enabled && eventSettings.incidents.ongoing.show
-      ? GetOngoingIncidentsForMonitorList(monitorTags)
+      ? GetOngoingIncidentsForMonitorList(eventMonitorTags)
       : Promise.resolve([] as IncidentForMonitorListWithComments[]),
     showInlineEvents && eventSettings.maintenances.enabled && eventSettings.maintenances.ongoing.show
-      ? GetOngoingMaintenances(monitorTags, nowTs)
+      ? GetOngoingMaintenances(eventMonitorTags, nowTs)
       : Promise.resolve([] as MaintenanceEventsMonitorList[]),
     showInlineEvents && eventSettings.maintenances.enabled && eventSettings.maintenances.upcoming.show
       ? GetUpcomingMaintenanceEventsForMonitorList(
-          monitorTags,
+          eventMonitorTags,
           eventSettings.maintenances.upcoming.maxCount,
           eventSettings.maintenances.upcoming.daysInFuture,
         )
@@ -463,6 +470,7 @@ export const GetPageDashboardData = async (
     ongoingMaintenances,
     upcomingMaintenances,
     monitorTags,
+    eventMonitorTags,
     monitorGroupMembersByTag,
     pageDetails: pageDetailsTyped,
     socialPagePreviewImage,

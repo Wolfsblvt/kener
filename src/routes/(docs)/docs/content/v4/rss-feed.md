@@ -10,7 +10,7 @@ Kener exposes a public RSS 2.0 feed of incidents and scheduled maintenance so fe
 | URL                    | Scope                                                        |
 | ---------------------- | ------------------------------------------------------------ |
 | `/rss.xml`             | Default page (root). Honors `forceExclusivity` when enabled. |
-| `/{page_path}/rss.xml` | A named status page — only items for that page's monitors.   |
+| `/{page_path}/rss.xml` | A named status page — only items for the monitors it shows.  |
 
 URLs respect `KENER_BASE_PATH`, so a deployment at `https://status.example.com/status` exposes the feed at `https://status.example.com/status/rss.xml`.
 
@@ -25,7 +25,7 @@ The feed includes incidents and maintenance events from the last 90 days, capped
 
 Hidden monitors never appear in an item's list of affected monitors. Which items appear depends on the feed:
 
-- `/{page_path}/rss.xml`, and `/rss.xml` when `forceExclusivity` is on, include an item only when it is global (`is_global = YES`) or affects a monitor that is on the page, `ACTIVE`, and not hidden. See [Monitor Visibility](/docs/v4/monitors/visibility#where-each-rule-applies).
+- `/{page_path}/rss.xml`, and `/rss.xml` when `forceExclusivity` is on, include an item only when it is global (`is_global = YES`) or affects a monitor the page shows, group members included, that is `ACTIVE` and not hidden. See [Monitor Visibility](/docs/v4/monitors/visibility#where-each-rule-applies).
 - `/rss.xml` when `forceExclusivity` is off includes every incident and every maintenance event. An item tied only to hidden monitors stays listed and shows no affected monitors.
 - Unknown `page_path` returns `404`.
 - If `siteURL` is not configured, the feed returns `404`.
