@@ -154,8 +154,8 @@
     {#if data.pageDetails?.page_logo}
       <img
         src={clientResolver(resolve, data.pageDetails.page_logo)}
-        alt="Page Logo"
-        class="aspect-auto w-12 rounded object-cover"
+        alt={data.pageDetails.page_title}
+        class="kener-page-logo aspect-auto w-12 rounded object-cover"
       />
     {/if}
     <Item.Root class="px-0 py-0">

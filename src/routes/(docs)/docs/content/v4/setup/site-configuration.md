@@ -17,6 +17,20 @@ Use **Manage → Site Configurations** to control identity, navigation, monitor 
 8. Configure **Event Display Settings**.
 9. Configure **Maintenance Notification Settings**.
 
+## Navigation per public origin {#navigation-per-public-origin}
+
+When the instance serves product Homes on admitted origins (`KENER_PUBLIC_ORIGINS`, see [Environment variables](/docs/v4/setup/environment-variables)), a `nav` item may carry `page`: it then shows only on the origin that serves that page, and never on the Site URL. Items without `page` show on the Site URL, and on any admitted origin that has no items of its own. The dashboard's navigation editor has no field for `page` but keeps it when you save; set it through the API:
+
+```json
+[
+    { "name": "Example", "url": "https://example.org", "iconURL": "" },
+    { "name": "Example product", "url": "https://product.example.org", "iconURL": "", "page": "product" },
+    { "name": "All status", "url": "https://status.example.org", "iconURL": "", "page": "product" }
+]
+```
+
+When the logo is a brand bundle's wordmark or lockup (served from `/brand/<id>/`), the navbar shows it at its own proportions, names the brand to screen readers and adds a quiet "status" beside it instead of the site or page name.
+
 ## Runtime impact map {#runtime-impact-map}
 
 | Setting area                 | Stored key                                                   | Runtime impact                                                                                  |

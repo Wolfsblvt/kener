@@ -17,6 +17,8 @@ export interface SiteNavItem {
   name: string;
   url: string;
   iconURL: string;
+  /** Wolfsblvt fork: show this item only on the admitted origin that serves this page (KENER_PUBLIC_ORIGINS). */
+  page?: string;
 }
 
 export interface SiteHero {

@@ -11,11 +11,16 @@ import {
   HasRequiredEnv,
   IsEmailSetup,
 } from "./controller.js";
-import type { EventDisplaySettings, GlobalPageVisibilitySettings, SiteDateTimeFormat } from "$lib/types/site.js";
+import type {
+  EventDisplaySettings,
+  GlobalPageVisibilitySettings,
+  SiteDateTimeFormat,
+  SiteNavItem,
+} from "$lib/types/site.js";
 import serverResolve from "../resolver.js";
 import { ResolveEventListPlacement } from "$lib/clientTools";
 import { AdmittedOriginIdentity, type PublicOrigin } from "../publicOrigins.js";
-import { BrandFavicon } from "../brandBundles.js";
+import { BrandFavicon, BrandWordmarkName } from "../brandBundles.js";
 
 export interface LayoutServerData {
   isMobile: boolean;
@@ -42,6 +47,10 @@ export interface LayoutServerData {
   };
   navItems: Array<{ name: string; url: string; iconURL: string }>;
   siteName: string;
+  // Wolfsblvt fork: the brand a wordmark or lockup logo spells; the bar then shows it with a quiet "status"
+  logoName: string | undefined;
+  // Wolfsblvt fork: the page an admitted origin serves at its root, null on the site URL
+  originPagePath: string | null;
   siteUrl: string;
   // True on an admitted public origin, where the page's own identity leads the shell
   isProductHome: boolean;
@@ -122,6 +131,21 @@ function NormalizeEventDisplaySettings(settings?: Partial<EventDisplaySettings>)
   };
 }
 
+/**
+ * Wolfsblvt fork: the nav for this host. An item with `page` belongs to that page's admitted origin; items
+ * without one belong to the site URL. An admitted origin with no items of its own shows the site's, as before.
+ * The site URL never shows a page-owned item.
+ */
+export function NavItemsForOrigin(
+  nav: SiteNavItem[] | undefined,
+  publicOrigin: PublicOrigin | null,
+): Array<{ name: string; url: string; iconURL: string }> {
+  const items = nav ?? [];
+  const siteItems = items.filter((item) => item.page === undefined);
+  const ownItems = publicOrigin ? items.filter((item) => item.page === publicOrigin.pagePath) : [];
+  return (ownItems.length > 0 ? ownItems : siteItems).map(({ name, url, iconURL }) => ({ name, url, iconURL }));
+}
+
 // publicOrigin: the admitted origin this request arrived on, if any. Its absolute links use that origin,
 // its one page is exclusive (no page switcher; "/" and the page's links stay on that page), the page's
 // title, logo, brand favicon and meta lead instead of the site's, and subscribing stays on the site URL.
@@ -176,6 +200,7 @@ export async function GetLayoutServerData(
   const globalPageVisibilitySettings =
     siteData.globalPageVisibilitySettings || seedSiteData.globalPageVisibilitySettings;
   const favicon = productIdentity ? BrandFavicon(productIdentity.logo) : siteData.favicon;
+  const logo = productIdentity ? productIdentity.logo : siteData.logo;
   return {
     isMobile,
     isSetupComplete,
@@ -185,11 +210,13 @@ export async function GetLayoutServerData(
     selectedLang,
     siteStatusColors,
     siteStatusColorsDark,
-    navItems: siteData.nav || [],
+    navItems: NavItemsForOrigin(siteData.nav, publicOrigin),
     siteName: productIdentity?.name || siteData.siteName || "Kener",
+    logoName: BrandWordmarkName(logo),
+    originPagePath: publicOrigin?.pagePath ?? null,
     siteUrl: publicOrigin?.origin ?? (siteData.siteURL || ""),
     isProductHome: !!productIdentity,
-    logo: productIdentity ? productIdentity.logo : siteData.logo,
+    logo,
     // Browsers fetch <link rel="icon"> from the SSR HTML before hydration.
     // SvelteKit's resolve() uses a relative base on the app-root page, so
     // prefix KENER_BASE_PATH here instead of in the layout.

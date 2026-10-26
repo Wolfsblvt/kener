@@ -9,7 +9,7 @@
   import { formatDate, formatDuration } from "$lib/stores/datetime";
   import { resolve } from "$app/paths";
   import clientResolver from "$lib/client/resolver.js";
-  import { GetInitials } from "$lib/clientTools.js";
+  import { EventChipLabel, GetInitials } from "$lib/clientTools.js";
   import type { IncidentCommentRecord, IncidentForMonitorListWithComments } from "$lib/server/types/db";
   import { SveltePurify } from "@humanspeak/svelte-purify";
   import mdToHTML from "$lib/marked";
@@ -37,6 +37,10 @@
   const endTimeForDuration = $derived(incident.end_date_time ?? Math.floor(Date.now() / 1000));
 
   const isEmbedded = page.route.id?.includes("(embed)");
+  // The page this list renders on names where a group member sits; elsewhere a chip is the monitor alone
+  const chipContext = $derived(
+    (page.data as { eventMonitorContext?: Record<string, string[]> }).eventMonitorContext ?? {}
+  );
   const target = isEmbedded ? "_blank" : "_self";
 </script>
 
@@ -64,7 +68,7 @@
                   variant="outline"
                   class="border-{monitor.monitor_impact.toLowerCase()}   max-w-full cursor-pointer rounded-none border-0 border-b px-0 text-sm font-normal wrap-anywhere whitespace-normal"
                 >
-                  {monitor.monitor_name}
+                  {EventChipLabel(monitor.monitor_name, chipContext[monitor.monitor_tag])}
                 </Badge>
               </Popover.Trigger>
               <Popover.Content

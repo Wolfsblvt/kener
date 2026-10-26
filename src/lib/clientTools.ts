@@ -417,6 +417,14 @@ function GetStatusBgColor(item: TimestampStatusCount): string {
   return textColor.replace("text-", "bg-");
 }
 // Get initials from monitor name for avatar fallback
+/**
+ * Wolfsblvt fork: an event chip's label. On a page, a group member is named with the groups that lead to it from
+ * the page's own rows, e.g. "Lens Studio › Analysis API", because the page shows it only inside them.
+ */
+function EventChipLabel(monitorName: string, context: string[] | undefined): string {
+  return [...(context ?? []), monitorName].join(" › ");
+}
+
 function GetInitials(name: string): string {
   return name
     .split(" ")
@@ -452,5 +460,6 @@ export {
   SslSecurityTextClass,
   FormatSslRemaining,
   GetInitials,
+  EventChipLabel,
   ResolveEventListPlacement,
 };

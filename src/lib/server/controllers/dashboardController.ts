@@ -1,7 +1,7 @@
 import db from "../db/db.js";
 import { GetMinuteStartNowTimestampUTC, BeginningOfMinute, BeginningOfDay } from "../tool.js";
 import { GetPageByPathWithMonitors, GetLatestMonitoringDataAllActive } from "./controller.js";
-import { GetPageShownMonitorTags } from "./pagesController.js";
+import { GetPageShownMonitorContext } from "./pagesController.js";
 import { GetMonitorsParsed } from "./monitorsController.js";
 import { GetStatusSummary, GetStatusBgColor, CollapseStatusCounts } from "../../clientTools";
 import { IsCurrentResult } from "../services/statusFreshness.js";
@@ -159,6 +159,8 @@ export interface PageDashboardData {
   monitorTags: string[];
   /** The page's monitors and the members of its groups, whose events the page lists. */
   eventMonitorTags: string[];
+  /** For each of eventMonitorTags, the names of the groups leading to it from a page row, for event chips. */
+  eventMonitorContext: Record<string, string[]>;
   monitorGroupMembersByTag: Record<string, string[]>;
   pageDetails: PageRecordTyped;
   socialPagePreviewImage?: string;
@@ -391,6 +393,7 @@ export const GetPageDashboardData = async (
       upcomingMaintenances: [],
       monitorTags,
       eventMonitorTags: [],
+      eventMonitorContext: {},
       monitorGroupMembersByTag: {},
       pageDetails: pageDetailsTyped,
       socialPagePreviewImage,
@@ -400,7 +403,8 @@ export const GetPageDashboardData = async (
   }
   // An event on a group member belongs to the page that shows its group. Events leave out hidden monitors
   // for every viewer, so the signed-in view lists the same ones.
-  const eventMonitorTags = await GetPageShownMonitorTags(pageDetails.id);
+  const eventMonitorContext = await GetPageShownMonitorContext(pageDetails.id);
+  const eventMonitorTags = [...eventMonitorContext.keys()];
   const eventSettings = layoutData.eventDisplaySettings;
   const showInlineEvents = eventSettings.showInlineEvents === true;
   // Fetch all dashboard data in parallel (respecting feature toggles)
@@ -471,6 +475,7 @@ export const GetPageDashboardData = async (
     upcomingMaintenances,
     monitorTags,
     eventMonitorTags,
+    eventMonitorContext: Object.fromEntries(eventMonitorContext),
     monitorGroupMembersByTag,
     pageDetails: pageDetailsTyped,
     socialPagePreviewImage,

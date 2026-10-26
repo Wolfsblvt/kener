@@ -7,7 +7,20 @@ import {
   GetSslSecurityState,
   FormatSslRemaining,
   ResolveEventListPlacement,
+  EventChipLabel,
 } from "./clientTools";
+
+describe("EventChipLabel", () => {
+  it("names a group member with the groups that lead to it on the page", () => {
+    expect(EventChipLabel("Analysis API", ["diffdevil", "Lens Studio"])).toBe("diffdevil › Lens Studio › Analysis API");
+    expect(EventChipLabel("Analysis API", ["Lens Studio"])).toBe("Lens Studio › Analysis API");
+  });
+
+  it("is the monitor alone for a page row or without page context", () => {
+    expect(EventChipLabel("Website", [])).toBe("Website");
+    expect(EventChipLabel("Analysis API", undefined)).toBe("Analysis API");
+  });
+});
 
 describe("IsValidDnsResolver", () => {
   it("accepts valid IPv4, IPv6, and hostnames", () => {

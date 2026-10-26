@@ -88,6 +88,10 @@ Roles are set through the API. The group editor in the dashboard has no role con
 
 With this setup `search` being `DOWN` makes the group `DEGRADED`, and `web` being `DOWN` makes it `DOWN`.
 
+## Events on group members {#events-on-group-members}
+
+A page lists the incidents and maintenances of every monitor it shows, group members included, while the group stays one row. On that page an event names a member by where it sits: an incident on `API` inside the `Search` group reads **Search › API**, and on a page that shows a `Product` group containing `Search` it reads **Product › Search › API**. A page's own rows, and events shown anywhere without a page (a monitor's own page, embeds), use the monitor's name alone.
+
 ## Latency aggregation {#latency-aggregation}
 
 Group latency uses selected mode:

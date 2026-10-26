@@ -8,10 +8,11 @@
   import clientResolver from "$lib/client/resolver.js";
   import trackEvent from "$lib/beacon";
   import MenuIcon from "@lucide/svelte/icons/menu";
+  import { t } from "$lib/stores/i18n";
 
   let { data } = page;
   const navItems: { name: string; url: string; iconURL: string }[] = data.navItems || [];
-  const { siteName, logo, globalPageVisibilitySettings, isProductHome } = data;
+  const { siteName, logo, logoName, globalPageVisibilitySettings, isProductHome } = data;
 
   const brandPath = $derived.by(() => {
     if (globalPageVisibilitySettings?.forceExclusivity) {
@@ -42,14 +43,25 @@
         style="border-radius: var(--radius-3xl)"
         onclick={trackBrandClick}
       >
-        {#if logo && isProductHome}
+        {#if logo && logoName}
+          <!-- A wordmark or lockup already spells the brand: it keeps its proportions and names the brand to
+               assistive technology, and a quiet descriptor says this is its status page -->
+          <img
+            src={clientResolver(resolve, logo)}
+            alt={logoName}
+            class="kener-brand-mark mr-1.5 h-5 w-auto max-w-40 object-contain"
+          />
+          <span class="kener-brand-descriptor text-muted-foreground font-normal lowercase">{$t("Status")}</span>
+        {:else if logo && isProductHome}
           <!-- A product Home's logo is the page's own, often a wordmark: it keeps its proportions, and the
                page title beside it already names it -->
           <img src={clientResolver(resolve, logo)} alt="" class="mr-2 h-5 w-auto max-w-40 object-contain" />
         {:else if logo}
           <img src={clientResolver(resolve, logo)} alt={siteName} class="mr-2 h-6 w-6 rounded-full object-cover" />
         {/if}
-        {siteName}
+        {#if !(logo && logoName)}
+          {siteName}
+        {/if}
       </a>
 
       <!-- Desktop Nav Links -->
