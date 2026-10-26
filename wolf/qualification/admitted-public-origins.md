@@ -5,7 +5,8 @@
 This record states what was independently run against the "Admitted public origins" patch at pull-request head
 `8e3d79fb7df02c63fe065c735031107b28dcf070` (tree `50c1c3602eba8906e3c66df41ff0636778f7e145`), and what was not. It
 adds database-engine and rendered evidence to the SQLite evidence already attached to that head; it changes no source
-and settles no product or presentation choice. The patch itself is described in [`../README.md`](../README.md).
+and settles no product or presentation choice. The patch itself is described in [`../README.md`](../README.md). The
+last section records the repair of finding 1 at `a4785a067cae617abc776997c011d89ad309972b` and what was run against it.
 
 ## What ran
 
@@ -95,7 +96,8 @@ overflowed horizontally at 390 px.
    portfolio host's events page does. Reproduce: a `GROUP` monitor with members `a` and `b` on the product page, an ongoing incident on
    `a` only, then load `/` and `/events/<current month>` on the product host. The listing code is unchanged by the patch
    (the portfolio host's `/<page>` omits it the same way), so this is an interaction between the patch's "group members
-   count as shown" rule and upstream's direct-monitor event listing, not a regression.
+   count as shown" rule and upstream's direct-monitor event listing, not a regression. Repaired; see
+   [Group-member events repair](#group-member-events-repair).
 2. **`/dashboard-apis/notifications` is not guarded.** On the product host `?tags=<portfolio-only monitor>` answers `200`.
    The patch notes already name the `dashboard-apis` JSON as unguarded; this confirms the exposure for that route.
 3. **Presentation left for judgment, as the patch notes say.** The nav shows the wordmark and then the text
@@ -105,3 +107,49 @@ overflowed horizontally at 390 px.
    two-host run, the central compatibility redirect, subscriber mail, real visitor use, and the full test suite.
 
 Fixture state, harness copies and scratch tooling were not committed.
+
+## Group-member events repair
+
+Commit `a4785a067cae617abc776997c011d89ad309972b` (tree `f75b8de3452b09c4040699fe42fc3b375eabb336`) makes a page's own
+event lists cover the monitors it shows, group members included: the Home's inline events and notifications list, the
+events page and the page feed, on the admitted origin and on the site URL's `/<page>` route. One helper,
+`GetPageShownMonitorTags`, now answers "which monitors does this page show" for these lists and for the existing
+admitted-origin route guard. Lists still leave hidden monitors out for every viewer; global events stay on every page;
+other pages' events stay off; the group still renders as one entry with its members behind "Included Monitors".
+
+The same kind of host, Node 24.22.1 and lockfile were used, in a fresh disk-backed scratch area, one bounded stage at a
+time (2 GiB memory, one CPU). The exact source bytes were hash-compared with the commit.
+
+| Check | Result |
+| --- | --- |
+| `npm run check` | 0 errors, 0 warnings |
+| `npm run test:server` (SQLite) | 48 files, 617 tests passed |
+| New test, against the source without the fix | fails; reverting only the events list, or only the feed, fails its own assertion |
+| `public-origins` and `hidden-monitors` harness copies, `dashboardController` | SQLite 29/42/6, PostgreSQL 16.14 29/42/6, MariaDB 11.8.9 29/42/6 |
+
+The harness copies are the same two mechanical changes as above (database from `CreateTestDb()`, insert ids read as
+`{id}` or a bare number) plus an explicit `incident_type` on incident fixtures for MariaDB; each run printed Kener's own
+database-type line for the engine it used.
+
+Rendered with `vite dev`, Valkey 9.0.4 and Chromium headless shell 149 (Playwright 1.61.1), both hostnames mapped to
+the scratch listener inside the browser only. Fixture: a DiffDevil page with its website monitor and a `GROUP` of two
+members, one ongoing incident on one member only, and one portfolio-only incident.
+
+| View | Without the fix | With the fix |
+| --- | --- | --- |
+| Product host `/`, 1280 px and 390 px | member incident missing | listed; portfolio incident absent; no horizontal overflow |
+| Product host `/events/<month>`, 1280 px and 390 px | missing | listed |
+| Site URL `/diffdevil` and its events page | missing | listed |
+| Product host `/rss.xml`, site URL `/diffdevil/rss.xml` | missing | listed; portfolio incident absent from the product feed |
+| Product host `/incidents/<member incident>`, `/incidents/<portfolio incident>` | `200`, `307` to the site URL | unchanged |
+
+![Product Home with the member incident listed](admitted-public-origins/group-member-events/product-home-desktop.png)
+
+[Product Home before the fix](admitted-public-origins/group-member-events/before-product-home-desktop.png) ·
+[product events, 390 px](admitted-public-origins/group-member-events/product-events-narrow.png) ·
+[site URL product events](admitted-public-origins/group-member-events/works-product-events-desktop.png)
+
+**Left for judgment:** the incident card names the affected member ("DiffDevil API"), which the page shows only inside
+its group; whether that name needs the group's context is a presentation question. Not proven here: a production build
+or image, real Redis, TLS and the front proxy, a deployed two-host run, subscriber mail, real visitors, and the
+client-side (browser) test project.
