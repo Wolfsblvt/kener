@@ -15,6 +15,7 @@ import type { EventDisplaySettings, GlobalPageVisibilitySettings, SiteDateTimeFo
 import serverResolve from "../resolver.js";
 import { ResolveEventListPlacement } from "$lib/clientTools";
 import { AdmittedOriginIdentity, type PublicOrigin } from "../publicOrigins.js";
+import { BrandFavicon } from "../brandBundles.js";
 
 export interface LayoutServerData {
   isMobile: boolean;
@@ -174,7 +175,7 @@ export async function GetLayoutServerData(
   const canSendEmail = IsEmailSetup();
   const globalPageVisibilitySettings =
     siteData.globalPageVisibilitySettings || seedSiteData.globalPageVisibilitySettings;
-  const favicon = productIdentity ? productIdentity.favicon : siteData.favicon;
+  const favicon = productIdentity ? BrandFavicon(productIdentity.logo) : siteData.favicon;
   return {
     isMobile,
     isSetupComplete,
