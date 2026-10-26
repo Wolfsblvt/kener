@@ -10,6 +10,7 @@
 
 import db from "$lib/server/db/db.js";
 import { GetAllSiteData } from "$lib/server/controllers/siteDataController.js";
+import { GetPageShownMonitorTags } from "$lib/server/controllers/pagesController.js";
 import type { IncidentForMonitorListWithComments, MaintenanceEventsMonitorList } from "$lib/server/types/db.js";
 import type { PublicOrigin } from "$lib/server/publicOrigins.js";
 
@@ -162,8 +163,8 @@ export async function renderRssFeedResponse(args: RenderRssFeedArgs): Promise<Re
       if (!page) {
         return new Response("Not found", { status: 404 });
       }
-      const pageMonitors = await db.getActivePageMonitors(page.id);
-      monitorTags = pageMonitors.map((m) => m.monitor_tag);
+      // The page's monitors and the members of its groups, which the page shows inline
+      monitorTags = await GetPageShownMonitorTags(page.id);
     }
   }
 

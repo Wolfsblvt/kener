@@ -229,3 +229,39 @@ export async function GetPageByPathWithMonitors(
   const monitors = await db.getActivePageMonitors(page.id, includeHidden);
   return { page, monitors };
 }
+
+/**
+ * Wolfsblvt fork: tags of every monitor a page shows. That is its active monitors and, because the page
+ * expands its groups inline, the active members of those groups at any depth; hidden monitors and members
+ * only when includeHidden. A page's own events (inline, events page, feed) cover these monitors, so an
+ * incident on a group member is listed where its group is shown.
+ */
+export async function GetPageShownMonitorTags(page_id: number, includeHidden = false): Promise<string[]> {
+  const shown = new Set<string>();
+  let candidates = (await db.getActivePageMonitors(page_id, includeHidden)).map((m) => m.monitor_tag);
+  while (candidates.length > 0) {
+    const members = new Set<string>();
+    for (const monitor of await db.getMonitorsByTags(candidates)) {
+      if (shown.has(monitor.tag) || monitor.status !== "ACTIVE") continue;
+      if (!includeHidden && monitor.is_hidden === "YES") continue;
+      shown.add(monitor.tag);
+      if (monitor.monitor_type !== "GROUP") continue;
+      for (const tag of groupMemberTags(monitor.type_data)) {
+        if (!shown.has(tag)) members.add(tag);
+      }
+    }
+    candidates = [...members];
+  }
+  return [...shown];
+}
+
+function groupMemberTags(typeData: string | null | undefined): string[] {
+  try {
+    const members = (JSON.parse(typeData || "{}") as { monitors?: Array<{ tag?: unknown }> }).monitors;
+    return Array.isArray(members)
+      ? members.map((m) => m?.tag).filter((tag): tag is string => typeof tag === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}

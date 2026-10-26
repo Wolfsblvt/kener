@@ -42,6 +42,8 @@ import { GET as statusBadge } from "./badge/[tag]/status/+server";
 import { load as loadMonitorEmbed } from "../(embed)/embed/monitor-[tag]/+page.server";
 import { load as loadLiveEventsEmbed } from "../(embed)/embed/events/live/+page.server";
 import subscriptionPost from "$lib/server/api-server/subscription/post";
+import notificationsGet from "$lib/server/api-server/notifications/get";
+import seedSiteData from "$lib/server/db/seedSiteData";
 
 const migrations = import.meta.glob<Knex.Migration>("/migrations/*.ts", { eager: true });
 const knex = (db as unknown as { knex: Knex }).knex;
@@ -537,6 +539,93 @@ describe("the admitted page as the product's own Home", () => {
     expect(mixed).toContain(productIncidentId);
     expect(mixed).not.toContain(portfolioIncidentId);
     expect(await liveEmbed(HOST.portfolio, "portfolio-site")).toContain(portfolioIncidentId);
+  });
+
+  it("lists an event on a group member wherever the page that shows its group is listed", async () => {
+    const now = GetNowTimestampUTC();
+    const incidentOn = async (tag: string) => {
+      const [id] = (
+        await knex("incidents").insert(
+          {
+            title: `${tag} down`,
+            start_date_time: now - 300,
+            is_global: "NO",
+            incident_type: "INCIDENT",
+            status: "OPEN",
+          },
+          ["id"],
+        )
+      ).map((r: { id: number }) => r.id);
+      await knex("incident_monitors").insert({ incident_id: id, monitor_tag: tag, monitor_impact: "DOWN" });
+      return id;
+    };
+    // product-api is on the product page only as a member of product-group; product-internal is a hidden member
+    await knex("monitors").insert({
+      tag: "product-internal",
+      name: "product-internal",
+      status: "ACTIVE",
+      is_hidden: "YES",
+      monitor_type: "NONE",
+      type_data: "{}",
+    });
+    const group = knex("monitors").where({ tag: "product-group" });
+    const groupData = (await group.clone().first()).type_data;
+    await group
+      .clone()
+      .update({ type_data: JSON.stringify({ monitors: [{ tag: "product-api" }, { tag: "product-internal" }] }) });
+    const memberIncidentId = await incidentOn("product-api");
+    const hiddenMemberIncidentId = await incidentOn("product-internal");
+    const inlineEvents = { ...seedSiteData.eventDisplaySettings, showInlineEvents: true };
+    await knex("site_data").insert({
+      key: "eventDisplaySettings",
+      value: JSON.stringify(inlineEvents),
+      data_type: "object",
+    });
+    try {
+      // The Home keeps the group as one entry and lists its member's incident
+      const home = (await rootPage(HOST.product)).body as {
+        monitorTags: string[];
+        eventMonitorTags: string[];
+        ongoingIncidents: Array<{ id: number }>;
+      };
+      expect(home.monitorTags).not.toContain("product-api");
+      expect([...home.eventMonitorTags].sort()).toEqual([
+        "product-api",
+        "product-docs",
+        "product-group",
+        "product-site",
+      ]);
+      expect(home.ongoingIncidents.map((i) => i.id)).toContain(memberIncidentId);
+      expect(home.ongoingIncidents.map((i) => i.id)).not.toContain(hiddenMemberIncidentId);
+      const notifications = await notificationsGet({
+        action: "notifications",
+        query: new URLSearchParams({ tags: home.eventMonitorTags.join(",") }),
+        cookies: anonymous,
+        headers: new Headers(),
+      });
+      const listed = ((await notifications.json()) as { notifications: Array<{ eventURL: string }> }).notifications;
+      expect(listed.map((n) => n.eventURL)).toContain(`/incidents/${memberIncidentId}`);
+
+      // The events page and feed of the page, on its origin and on the site URL's page route
+      expect(await eventsFor(HOST.product, "undefined")).toContain(memberIncidentId);
+      expect(await eventsFor(HOST.portfolio, "product")).toContain(memberIncidentId);
+      expect(await eventsFor(HOST.product, "undefined")).not.toContain(hiddenMemberIncidentId);
+      expect(await eventsFor(HOST.portfolio, "other")).not.toContain(memberIncidentId);
+      expect((await feed(HOST.product, rootFeed)).body).toContain(`${PRODUCT}/incidents/${memberIncidentId}`);
+      expect((await feed(HOST.portfolio, namedPageFeed, { page_path: "product" })).body).toContain(
+        `/incidents/${memberIncidentId}`,
+      );
+      expect((await feed(HOST.product, rootFeed)).body).not.toContain(`/incidents/${hiddenMemberIncidentId}`);
+      // Global events stay on every page, other pages' events stay off this one
+      expect(await eventsFor(HOST.product, "undefined")).toContain(globalIncidentId);
+      expect(await eventsFor(HOST.product, "undefined")).not.toContain(portfolioIncidentId);
+    } finally {
+      await knex("site_data").where({ key: "eventDisplaySettings" }).del();
+      await group.clone().update({ type_data: groupData });
+      await knex("incident_monitors").whereIn("incident_id", [memberIncidentId, hiddenMemberIncidentId]).del();
+      await knex("incidents").whereIn("id", [memberIncidentId, hiddenMemberIncidentId]).del();
+      await knex("monitors").where({ tag: "product-internal" }).del();
+    }
   });
 
   it("serves every monitor and event on the site URL and an unknown host, as upstream", async () => {

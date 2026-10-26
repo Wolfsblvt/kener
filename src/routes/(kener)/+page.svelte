@@ -149,7 +149,7 @@
 
 <!-- page title -->
 <div class="flex flex-col gap-3 sm:gap-4">
-  <ThemePlus monitor_tags={data.monitorTags} hideNotificationsPopover={eventListPlacement !== "button"} />
+  <ThemePlus monitor_tags={data.eventMonitorTags} hideNotificationsPopover={eventListPlacement !== "button"} />
   <div class="flex flex-col gap-2 px-3 py-2 sm:px-4">
     {#if data.pageDetails?.page_logo}
       <img
@@ -238,7 +238,7 @@
     </div>
     {#if eventListPlacement === "aside"}
       <div class="col-span-1 overflow-hidden rounded-3xl border sm:col-span-5">
-        <NotificationsList monitorTags={data.monitorTags} />
+        <NotificationsList monitorTags={data.eventMonitorTags} />
       </div>
     {/if}
   </div>

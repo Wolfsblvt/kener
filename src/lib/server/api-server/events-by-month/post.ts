@@ -3,6 +3,7 @@ import type { APIServerRequest } from "$lib/server/types/api-server";
 import type { IncidentForMonitorListWithComments, MaintenanceEventsMonitorList } from "$lib/server/types/db";
 import db from "$lib/server/db/db";
 import { GetAllSiteData } from "$lib/server/controllers/siteDataController";
+import { GetPageShownMonitorTags } from "$lib/server/controllers/pagesController";
 
 interface EventsByMonthRequest {
   start_ts: number;
@@ -52,8 +53,8 @@ export default async function post(req: APIServerRequest): Promise<Response> {
     if (!pageData) {
       return error(404, { message: "Page not found" });
     }
-    const monitorsForPage = await db.getActivePageMonitors(pageData.id);
-    pathMonitors = monitorsForPage.map((m) => m.monitor_tag);
+    // The page's monitors and the members of its groups, which the page shows inline
+    pathMonitors = await GetPageShownMonitorTags(pageData.id);
   }
 
   const [incidents, maintenances] = await Promise.all([

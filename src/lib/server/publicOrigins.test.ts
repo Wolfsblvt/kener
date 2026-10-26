@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("$lib/server/db/db.js", () => ({
-  default: { getPageByPath: vi.fn(), getActivePageMonitors: vi.fn(), getMonitorsByTags: vi.fn(async () => []) },
+  default: {
+    getPageByPath: vi.fn(),
+    getActivePageMonitors: vi.fn(),
+    // Every asked-for monitor exists, is active, visible and not a group
+    getMonitorsByTags: vi.fn(async (tags: string[]) =>
+      tags.map((tag) => ({ tag, status: "ACTIVE", is_hidden: "NO", monitor_type: "NONE", type_data: "{}" })),
+    ),
+  },
 }));
 
 import db from "$lib/server/db/db.js";

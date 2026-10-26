@@ -18,6 +18,7 @@
 import { error, redirect } from "@sveltejs/kit";
 import db from "$lib/server/db/db.js";
 import serverResolve from "$lib/server/resolver.js";
+import { GetPageShownMonitorTags } from "$lib/server/controllers/pagesController.js";
 
 export interface PublicOrigin {
   /** Absolute origin without a trailing slash, e.g. "https://status.example.org". */
@@ -109,39 +110,14 @@ export function GuardAdmittedPageRoute(
 }
 
 /**
- * Tags of every monitor the admitted page shows: its active monitors, hidden ones included (the routes
- * still decide who may see those), and the members of its groups, which the page expands inline. Null
- * when the page does not exist.
+ * Tags of every monitor the admitted page shows: its active monitors and the active members of its
+ * groups, which the page expands inline, hidden ones included (the routes still decide who may see
+ * those). Null when the page does not exist.
  */
 export async function AdmittedPageMonitorTags(publicOrigin: PublicOrigin): Promise<Set<string> | null> {
   const page = await db.getPageByPath(publicOrigin.pagePath);
   if (!page) return null;
-
-  const shown = new Set<string>();
-  let next = (await db.getActivePageMonitors(page.id, true)).map((m) => m.monitor_tag);
-  while (next.length > 0) {
-    next.forEach((tag) => shown.add(tag));
-    const members = new Set<string>();
-    for (const monitor of await db.getMonitorsByTags(next)) {
-      if (monitor.monitor_type !== "GROUP" || monitor.status !== "ACTIVE") continue;
-      for (const tag of groupMemberTags(monitor.type_data)) {
-        if (!shown.has(tag)) members.add(tag);
-      }
-    }
-    next = [...members];
-  }
-  return shown;
-}
-
-function groupMemberTags(typeData: string | null | undefined): string[] {
-  try {
-    const members = (JSON.parse(typeData || "{}") as { monitors?: Array<{ tag?: unknown }> }).monitors;
-    return Array.isArray(members)
-      ? members.map((m) => m?.tag).filter((tag): tag is string => typeof tag === "string")
-      : [];
-  } catch {
-    return [];
-  }
+  return new Set(await GetPageShownMonitorTags(page.id, true));
 }
 
 /**
