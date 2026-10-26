@@ -3,6 +3,7 @@ import { error } from "@sveltejs/kit";
 import { parse, isValid, getYear, startOfMonth, endOfMonth, addMonths, getUnixTime } from "date-fns";
 import { GetPageByPathWithMonitors } from "$lib/server/controllers/controller.js";
 import { AdmittedCanonicalURL, GuardAdmittedPageRoute } from "$lib/server/publicOrigins.js";
+import { GetPageEventMonitorContext } from "$lib/server/controllers/pagesController.js";
 
 const MIN_YEAR = 2023;
 
@@ -45,5 +46,7 @@ export const load: PageServerLoad = async ({ params, parent, locals, url }) => {
   return {
     ...{ monthParam, monthStartTs, monthEndTs },
     canonicalUrl: AdmittedCanonicalURL(locals.publicOrigin, params.page_path, `/events/${monthParam}`),
+    // Event chips name a group member's place on this page
+    eventMonitorContext: await GetPageEventMonitorContext(params.page_path),
   };
 };

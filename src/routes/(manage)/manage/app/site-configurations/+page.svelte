@@ -36,6 +36,7 @@
     url: string;
     iconURL: string;
     uploading?: boolean;
+    page?: string;
   }
 
   // Form state
@@ -169,7 +170,9 @@
           nav = data.nav.map((item: NavItem) => ({
             name: item.name || "",
             url: item.url || "",
-            iconURL: item.iconURL || ""
+            iconURL: item.iconURL || "",
+            // Wolfsblvt fork: keep an item's admitted-origin page, which this editor does not show
+            ...(item.page ? { page: item.page } : {})
           }));
         }
         if (data.subMenuOptions) {
@@ -374,7 +377,8 @@
       const cleanNav = nav.map((item) => ({
         name: item.name,
         url: item.url,
-        iconURL: item.iconURL
+        iconURL: item.iconURL,
+        ...(item.page ? { page: item.page } : {})
       }));
       const response = await fetch(clientResolver(resolve, "/manage/api"), {
         method: "POST",

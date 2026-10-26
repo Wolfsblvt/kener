@@ -5,11 +5,18 @@ vi.mock("../db/db.js", () => ({
 }));
 
 import db from "../db/db.js";
-import { GetPageShownMonitorTags } from "./pagesController";
+import { GetPageShownMonitorContext, GetPageShownMonitorTags } from "./pagesController";
 
 const mockedDb = vi.mocked(db);
 
-type Monitor = { tag: string; status?: string; is_hidden?: string; members?: string[]; type_data?: string };
+type Monitor = {
+  tag: string;
+  name?: string;
+  status?: string;
+  is_hidden?: string;
+  members?: string[];
+  type_data?: string;
+};
 
 // The page shows `pageTags`; `monitors` is every monitor of the instance
 function stub(pageTags: string[], monitors: Monitor[]) {
@@ -18,6 +25,7 @@ function stub(pageTags: string[], monitors: Monitor[]) {
       m.tag,
       {
         tag: m.tag,
+        name: m.name ?? m.tag,
         status: m.status ?? "ACTIVE",
         is_hidden: m.is_hidden ?? "NO",
         monitor_type: m.members || m.type_data ? "GROUP" : "NONE",
@@ -93,5 +101,45 @@ describe("GetPageShownMonitorTags", () => {
       ],
     );
     expect(await shown()).toEqual(["api", "broken", "group", "odd"]);
+  });
+});
+
+describe("GetPageShownMonitorContext", () => {
+  it("names the groups that lead to each shown monitor, nearest page row first", async () => {
+    stub(
+      ["works-website", "product-diffdevil"],
+      [
+        { tag: "works-website", name: "Wolfsblvt Works website" },
+        { tag: "product-diffdevil", name: "diffdevil", members: ["diffdevil-website", "capability-lens"] },
+        { tag: "diffdevil-website", name: "Website" },
+        { tag: "capability-lens", name: "Lens Studio", members: ["lens-page", "lens-api"] },
+        { tag: "lens-page", name: "Lens Studio page" },
+        { tag: "lens-api", name: "Analysis API" },
+      ],
+    );
+    expect(Object.fromEntries(await GetPageShownMonitorContext(1))).toEqual({
+      "works-website": [],
+      "product-diffdevil": [],
+      "diffdevil-website": ["diffdevil"],
+      "capability-lens": ["diffdevil"],
+      "lens-page": ["diffdevil", "Lens Studio"],
+      "lens-api": ["diffdevil", "Lens Studio"],
+    });
+  });
+
+  it("keeps the shortest route to a monitor that is also a page row or sits in several groups", async () => {
+    stub(
+      ["api", "outer"],
+      [
+        { tag: "api", name: "API" },
+        { tag: "outer", name: "Outer", members: ["inner", "shared"] },
+        { tag: "inner", name: "Inner", members: ["api", "shared"] },
+        { tag: "shared", name: "Shared" },
+      ],
+    );
+    const context = await GetPageShownMonitorContext(1);
+    expect(context.get("api")).toEqual([]);
+    expect(context.get("shared")).toEqual(["Outer"]);
+    expect([...context.keys()]).toEqual(await GetPageShownMonitorTags(1));
   });
 });

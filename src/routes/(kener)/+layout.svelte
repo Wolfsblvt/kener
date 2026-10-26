@@ -55,7 +55,8 @@
 	</style>`}
   <script src={clientResolver(resolve, "/capture.js")}></script>
 </svelte:head>
-<main class="kener-public status-page-app">
+<!-- data-status-page: the page shown, "" for the home page; a stable hook for per-product presentation -->
+<main class="kener-public status-page-app" data-status-page={page.params.page_path ?? data.originPagePath ?? ""}>
   <!-- Nav -->
   <KenerNav />
   <!-- Body -->

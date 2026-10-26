@@ -137,7 +137,7 @@ A request whose `Host` header is an admitted host gets:
 
 - that page at `/`, its events at `/events/<Month>-<Year>` and its feed at `/rss.xml`
 - `/<page>` and its sub-paths answered with a `308` to the root path; other pages answer `404`
-- the page's own identity: its title and logo in the navigation bar, page titles and feed; when the logo is served from a brand bundle at `/brand/<id>/`, that bundle's favicon; and its meta title, description and social preview image. The site's name, logo and favicon are not used there; the site's footer and navigation links still are.
+- the page's own identity: its title and logo in the navigation bar, page titles and feed; when the logo is served from a brand bundle at `/brand/<id>/`, that bundle's favicon; and its meta title, description and social preview image. The site's name, logo and favicon are not used there; the site's footer still is, and so are its navigation links unless some name that page ([Navigation per public origin](/docs/v4/setup/site-configuration#navigation-per-public-origin)).
 - feed, sitemap, `robots.txt` and social-preview links on that origin, a `<link rel="canonical">` to that origin, and no page switcher
 - monitor pages, feeds, badges and embeds only for monitors the page shows, including group members; incident and maintenance pages only for global events and events on those monitors. Anything else answers a `307` to the same path on the Site URL, or `404` without a Site URL.
 - no subscribe button, and the subscription endpoint refuses every action: a subscription covers every page, so it is offered on the Site URL only

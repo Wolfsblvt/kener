@@ -237,22 +237,47 @@ export async function GetPageByPathWithMonitors(
  * incident on a group member is listed where its group is shown.
  */
 export async function GetPageShownMonitorTags(page_id: number, includeHidden = false): Promise<string[]> {
-  const shown = new Set<string>();
-  let candidates = (await db.getActivePageMonitors(page_id, includeHidden)).map((m) => m.monitor_tag);
-  while (candidates.length > 0) {
-    const members = new Set<string>();
-    for (const monitor of await db.getMonitorsByTags(candidates)) {
+  return [...(await GetPageShownMonitorContext(page_id, includeHidden)).keys()];
+}
+
+/**
+ * Wolfsblvt fork: every monitor a page shows (see GetPageShownMonitorTags), each with the names of the groups
+ * that lead to it from the page's own rows, nearest page row first. A page row has no ancestors. A monitor
+ * reachable through several groups keeps its shortest route. An event chip uses this to name where a group
+ * member sits on that page, e.g. "Lens Studio › Analysis API".
+ */
+export async function GetPageShownMonitorContext(
+  page_id: number,
+  includeHidden = false,
+): Promise<Map<string, string[]>> {
+  const shown = new Map<string, string[]>();
+  let candidates = new Map<string, string[]>(
+    (await db.getActivePageMonitors(page_id, includeHidden)).map((m) => [m.monitor_tag, []]),
+  );
+  while (candidates.size > 0) {
+    const members = new Map<string, string[]>();
+    for (const monitor of await db.getMonitorsByTags([...candidates.keys()])) {
       if (shown.has(monitor.tag) || monitor.status !== "ACTIVE") continue;
       if (!includeHidden && monitor.is_hidden === "YES") continue;
-      shown.add(monitor.tag);
+      const ancestors = candidates.get(monitor.tag) ?? [];
+      shown.set(monitor.tag, ancestors);
       if (monitor.monitor_type !== "GROUP") continue;
       for (const tag of groupMemberTags(monitor.type_data)) {
-        if (!shown.has(tag)) members.add(tag);
+        if (!shown.has(tag) && !members.has(tag)) members.set(tag, [...ancestors, monitor.name]);
       }
     }
-    candidates = [...members];
+    candidates = members;
   }
-  return [...shown];
+  return shown;
+}
+
+/**
+ * Wolfsblvt fork: the event-chip context of the page at pagePath, keyed by monitor tag, for event lists
+ * rendered on that page. Empty when the page does not exist.
+ */
+export async function GetPageEventMonitorContext(pagePath: string): Promise<Record<string, string[]>> {
+  const page = await db.getPageByPath(pagePath);
+  return page ? Object.fromEntries(await GetPageShownMonitorContext(page.id)) : {};
 }
 
 function groupMemberTags(typeData: string | null | undefined): string[] {
