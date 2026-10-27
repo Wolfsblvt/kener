@@ -39,6 +39,7 @@ import { CurrentStatusOf } from "../services/statusFreshness.js";
 import { translate, isLocaleAvailable } from "../i18n.js";
 import type { HeartbeatMonitor, GroupMonitorTypeData } from "../types/monitor.js";
 import { IsValidProxyURL, IsValidHeartbeatSecret, HEARTBEAT_SECRET_RULE } from "../../anywhere.js";
+import type { StandingReplacement } from "../db/repositories/standingRetirement.js";
 
 interface GroupUpdateData {
   monitor_tag: string;
@@ -570,6 +571,19 @@ export const DeleteMonitorCompletelyUsingTag = async (tag: string): Promise<numb
   await removeTagFromGroupMonitors(tag);
   await DeleteMonitorCaches(tag);
   return await db.deleteMonitorsByTag(tag);
+};
+
+/** Preserve an exact Unknown subject's state under its fixed observation identity, then invalidate affected caches. */
+export const RetireStandingMonitors = async (replacements: StandingReplacement[]) => {
+  const results = await db.retireStanding(replacements);
+  // Repeat this on an already-absent retry: the preceding request may have committed before cache/response failure.
+  const groups = await db.getMonitors({ monitor_type: "GROUP" });
+  const tags = new Set([
+    ...replacements.flatMap((pair) => [pair.tag, pair.replacement]),
+    ...groups.map((group) => group.tag),
+  ]);
+  for (const tag of tags) await DeleteMonitorCaches(tag);
+  return results;
 };
 
 //getMonitorsByTag

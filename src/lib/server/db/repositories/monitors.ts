@@ -1,6 +1,7 @@
 import type { Knex as KnexType } from "knex";
 import { BaseRepository, type MonitorFilter, type CountResult } from "./base.js";
 import type { MonitorRecord, MonitorRecordInsert } from "../../types/db.js";
+import { RetireStanding, type StandingReplacement } from "./standingRetirement.js";
 
 /**
  * Clamp the Confirmation Threshold to its 1–60 invariant at the data layer, so the bound holds
@@ -17,6 +18,10 @@ function clampConfirmationThreshold(value: number | null | undefined): number {
  * Repository for monitors CRUD operations
  */
 export class MonitorsRepository extends BaseRepository {
+  async retireStanding(replacements: StandingReplacement[]) {
+    return RetireStanding(this.knex, replacements);
+  }
+
   async getMonitorsByTags(tags: string[]): Promise<MonitorRecord[]> {
     return await this.knex("monitors").whereIn("tag", tags);
   }
@@ -50,26 +55,28 @@ export class MonitorsRepository extends BaseRepository {
   }
 
   async updateMonitor(data: MonitorRecord): Promise<number> {
-    return await this.knex("monitors").where({ id: data.id }).update({
-      tag: data.tag,
-      name: data.name,
-      description: data.description,
-      image: data.image,
-      cron: data.cron,
-      default_status: data.default_status,
-      status: data.status,
-      category_name: data.category_name,
-      monitor_type: data.monitor_type,
-      type_data: data.type_data,
-      day_degraded_minimum_count: data.day_degraded_minimum_count,
-      day_down_minimum_count: data.day_down_minimum_count,
-      confirmation_threshold: clampConfirmationThreshold(data.confirmation_threshold),
-      include_degraded_in_downtime: data.include_degraded_in_downtime,
-      is_hidden: data.is_hidden,
-      monitor_settings_json: data.monitor_settings_json,
-      updated_at: this.knex.fn.now(),
-      external_url: data.external_url,
-    });
+    return await this.knex("monitors")
+      .where({ id: data.id })
+      .update({
+        tag: data.tag,
+        name: data.name,
+        description: data.description,
+        image: data.image,
+        cron: data.cron,
+        default_status: data.default_status,
+        status: data.status,
+        category_name: data.category_name,
+        monitor_type: data.monitor_type,
+        type_data: data.type_data,
+        day_degraded_minimum_count: data.day_degraded_minimum_count,
+        day_down_minimum_count: data.day_down_minimum_count,
+        confirmation_threshold: clampConfirmationThreshold(data.confirmation_threshold),
+        include_degraded_in_downtime: data.include_degraded_in_downtime,
+        is_hidden: data.is_hidden,
+        monitor_settings_json: data.monitor_settings_json,
+        updated_at: this.knex.fn.now(),
+        external_url: data.external_url,
+      });
   }
 
   async updateMonitorTrigger(data: {
