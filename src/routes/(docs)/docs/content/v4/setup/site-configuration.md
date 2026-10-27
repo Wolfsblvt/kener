@@ -63,6 +63,7 @@ See [Sharing Monitors](/docs/v4/sharing).
 - `showSwitcher: boolean`
     - Controls whether the page switcher dropdown is visible in the top controls.
     - `true`: users can switch pages from the selector.
+    - The current page name remains visible on narrow screens.
     - `false`: page selector is hidden.
 
 - `forceExclusivity: boolean`
@@ -93,6 +94,7 @@ When enabled, cleanup runs daily at midnight UTC.
 
 - `showInlineEvents` (**Display Events Inline**): when `true`, ongoing incidents, ongoing maintenances, and upcoming maintenances show above the monitors on status pages and monitor pages. Default: `false`.
 - `eventListPlacement` (**Event List**): where the list of current and past events shows. You can set it independently of `showInlineEvents`.
+- When inline events and the status-page aside are both enabled, the aside omits events already shown inline, including from accessibility navigation. Distinct recent history and the events-page link remain available at desktop and narrow widths.
 - incidents: ongoing/resolved + resolved limits
 - maintenances: ongoing/past/upcoming + limits
 

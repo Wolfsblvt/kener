@@ -63,6 +63,14 @@
     MAINTENANCE: "stroke-maintenance",
     NO_DATA: "stroke-muted-foreground"
   } as const;
+
+  const STATUS_LABEL = {
+    UP: "Operational",
+    DOWN: "Down",
+    DEGRADED: "Degraded",
+    MAINTENANCE: "Maintenance",
+    NO_DATA: "Unknown"
+  } as const;
 </script>
 
 <div>
@@ -132,8 +140,14 @@
 
       <Item.Content class="order-3 w-full text-left sm:order-0 sm:w-auto sm:flex-none sm:text-center">
         <Item.Title class="items-start text-2xl">
-          <StatusIcon class="{STATUS_STROKE[data.currentStatus]} {grid ? 'mt-1 size-5' : 'mt-1.5 size-6'}" />
+          <StatusIcon
+            aria-hidden="true"
+            class="{STATUS_STROKE[data.currentStatus]} {grid ? 'mt-1 size-5' : 'mt-1.5 size-6'}"
+          />
           <div class="flex flex-col items-start gap-1 sm:items-end">
+            <span class={grid ? "text-base sm:text-lg" : "text-lg sm:text-xl"}
+              >{$t(STATUS_LABEL[data.currentStatus])}</span
+            >
             {#if data.monitorType === "SSL" && sslSecurity}
               <span
                 class="{grid ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-semibold {SslSecurityTextClass(
@@ -151,7 +165,14 @@
                 </span>
               {/if}
             {:else}
-              <span class={grid ? "text-base sm:text-lg" : "text-lg sm:text-xl"}>{data.uptime}%</span>
+              <span class="text-muted-foreground text-xs">
+                {#if data.currentStatus === "NO_DATA"}
+                  {$t("No uptime data")}
+                {:else}
+                  {data.uptime}% {$t("uptime")}{#if days}
+                    · {days} {$t("d")}{/if}
+                {/if}
+              </span>
               <span class="text-muted-foreground text-right text-xs">
                 {data.avgLatency}
               </span>

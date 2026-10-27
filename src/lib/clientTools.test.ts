@@ -11,6 +11,9 @@ import {
 } from "./clientTools";
 
 describe("EventChipLabel", () => {
+  it("preserves meaningful public context at any depth", () => {
+    expect(EventChipLabel("API", ["Portfolio", "Product", "Search"])).toBe("Portfolio › Product › Search › API");
+  });
   it("names a group member with the groups that lead to it on the page", () => {
     expect(EventChipLabel("Analysis API", ["diffdevil", "Lens Studio"])).toBe("diffdevil › Lens Studio › Analysis API");
     expect(EventChipLabel("Analysis API", ["Lens Studio"])).toBe("Lens Studio › Analysis API");

@@ -34,6 +34,15 @@
   let isCompact = $derived(viewType === "compact-list" || viewType === "compact-grid");
   let showInlineEvents = $derived(data.eventDisplaySettings?.showInlineEvents === true);
   let eventListPlacement = $derived(data.eventDisplaySettings?.eventListPlacement);
+  const inlineEventURLs = $derived(
+    showInlineEvents
+      ? [
+          ...(data.ongoingIncidents ?? []).map((event) => `/incidents/${event.id}`),
+          ...(data.ongoingMaintenances ?? []).map((event) => `/maintenances/${event.id}`),
+          ...(data.upcomingMaintenances ?? []).map((event) => `/maintenances/${event.id}`)
+        ]
+      : []
+  );
 
   function getGridItemSpanClass(index: number, total: number, type: typeof viewType): string {
     if (type === "default-grid") {
@@ -238,7 +247,7 @@
     </div>
     {#if eventListPlacement === "aside"}
       <div class="col-span-1 overflow-hidden rounded-3xl border sm:col-span-5">
-        <NotificationsList monitorTags={data.eventMonitorTags} />
+        <NotificationsList monitorTags={data.eventMonitorTags} {inlineEventURLs} />
       </div>
     {/if}
   </div>

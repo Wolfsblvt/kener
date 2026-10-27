@@ -105,6 +105,37 @@ describe("GetPageShownMonitorTags", () => {
 });
 
 describe("GetPageShownMonitorContext", () => {
+  it.each([0, 1, 4])("uses the nearest private capability below %i navigation subsections", async (depth) => {
+    const sections = Array.from({ length: depth + 1 }, (_, i) => `section-level-${i}`);
+    stub(
+      [sections[0]],
+      [
+        ...sections.map((tag, i) => ({
+          tag,
+          name: `Navigation ${i}`,
+          members: [sections[i + 1] ?? "capability-browser"],
+        })),
+        { tag: "capability-browser", name: "Browser Home", members: ["browser-origin"] },
+        { tag: "browser-origin", name: "Browser origin" },
+      ],
+    );
+    expect((await GetPageShownMonitorContext(1)).get("browser-origin")).toEqual(["Browser Home"]);
+    expect(await shown()).toContain("browser-origin");
+  });
+
+  it("keeps a public product and deeper capability context without private navigation", async () => {
+    stub(
+      ["product-example"],
+      [
+        { tag: "product-example", name: "Example", members: ["capability-search"] },
+        { tag: "capability-search", name: "Search", members: ["inner"] },
+        { tag: "inner", name: "Index", members: ["api"] },
+        { tag: "api", name: "API" },
+      ],
+    );
+    expect((await GetPageShownMonitorContext(1)).get("api")).toEqual(["Example", "Search", "Index"]);
+  });
+
   it("names the groups that lead to each shown monitor, nearest page row first", async () => {
     stub(
       ["works-website", "product-diffdevil"],
