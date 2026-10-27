@@ -54,6 +54,42 @@ export class PagesRepository extends BaseRepository {
       });
   }
 
+  /** Reconcile metadata and ordered membership atomically, retaining survivor identity and settings. */
+  async reconcilePage(id: number, data: Partial<PageRecordInsert>, tags?: string[]): Promise<void> {
+    await this.knex.transaction(async (trx) => {
+      if (Object.keys(data).length) {
+        await trx("pages")
+          .where({ id })
+          .update({ ...data, updated_at: trx.fn.now() });
+      }
+      if (tags === undefined) return;
+      const current = await trx("pages_monitors").where({ page_id: id });
+      const desired = new Set(tags);
+      for (const row of current) {
+        if (!desired.has(row.monitor_tag))
+          await trx("pages_monitors").where({ page_id: id, monitor_tag: row.monitor_tag }).del();
+      }
+      for (const [position, monitor_tag] of tags.entries()) {
+        const survivor = current.find((row) => row.monitor_tag === monitor_tag);
+        if (survivor) {
+          if (survivor.position !== position) {
+            // Position is source-owned; a reorder does not change the association's chronology.
+            await trx("pages_monitors").where({ page_id: id, monitor_tag }).update({ position });
+          }
+        } else {
+          await trx("pages_monitors").insert({
+            page_id: id,
+            monitor_tag,
+            position,
+            monitor_settings_json: null,
+            created_at: trx.fn.now(),
+            updated_at: trx.fn.now(),
+          });
+        }
+      }
+    });
+  }
+
   async deletePage(id: number): Promise<number> {
     return await this.knex("pages").where("id", id).del();
   }

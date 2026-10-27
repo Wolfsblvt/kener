@@ -87,9 +87,17 @@ The source must be an exact `unknown-*` tag, type `NONE`, default `NO_DATA`, wit
 
 This operation moves the placeholder's monitoring samples, incident/maintenance links, page membership and settings/order, group member options, and alert relationships directly in one database transaction. It preserves stored sample types, raw status, timestamps, event impacts and the destination monitor's identity/configuration. It neither copies data through the MANUAL-writing API nor invokes destructive monitor DELETE. Run it with the estate's normal single configuration writer and no concurrent writers to the superseded subject.
 
-An overlapping sample timestamp, existing destination membership in the same event/page/alert configuration, or both tags in one group returns HTTP `409`, with `error.code: STANDING_RETIREMENT_CONFLICT` and a finite `reason`. Every change in that batch rolls back. Resolve the actual subject/collision with the responsible operator; the API never chooses which valued record to discard. Inventory is read directly from the database, without the incident-list cap.
+Several exact sources may name the same destination. The transaction reconciles that whole destination group together. Equal samples at the same timestamp collapse once only when all stored sample content agrees. Equal event impacts, page settings, alert-configuration memberships and group member options also collapse once. An existing destination association keeps its identity, chronology and position; otherwise the first source association in request order survives (groups use their first existing member position). Page ranks are reconciled separately by source placement. Independent alert histories/configurations retain their own identities and chronology.
+
+Conflicting sample content, event impacts, page settings or group options return HTTP `409`, with `error.code: STANDING_RETIREMENT_CONFLICT` and a finite table/group `reason`. Every change in the complete request rolls back, including earlier destination groups. Resolve the actual conflict with the responsible operator; the API never chooses which valued content to discard. Inventory is read directly from the database, without the incident-list cap.
 
 HTTP `200` returns `results`, one `{tag, replacement, outcome, moved}` per pair. `retired` and its per-table counts describe the committed reassociation; `already-absent` only observes that the source is absent and the destination exists. It is not a claim about who previously retired it. A retry preserves the database and clears affected status caches again. HTTP `500` (`RETIREMENT_UNOBSERVED`) or a lost response may follow a commit: read the exact two identities/history/references, then repeat the same operation to reconcile. Do not fall back to DELETE. Upstream releases without this endpoint cannot supply this preservation operation.
+
+### Preserve page associations while changing membership {#preserving-page-reconcile}
+
+`PATCH /api/v4/pages/:page_path` accepts `monitors` as the complete ordered tag list. On this fork it updates survivor positions in place, inserts only new associations and removes only absent ones. Survivor settings, composite identity (`page_id`, `monitor_tag`) and timestamps stay intact. Page metadata and membership commit in one transaction or roll back together. Omitting `monitors` leaves membership unchanged; an empty array deliberately removes all members.
+
+The detail GET/PATCH response advertises `page.monitor_reconciliation: "preserve"`. Check this before changing membership: older upstream runtimes replace association rows and settings. No explicit setting reset is part of this operation.
 
 ### Get All Monitors
 

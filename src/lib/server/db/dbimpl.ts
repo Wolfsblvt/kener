@@ -250,6 +250,7 @@ class DbImpl {
   deletePageMonitorsByTag!: PagesRepository["deletePageMonitorsByTag"];
   deletePageMonitorsByPageId!: PagesRepository["deletePageMonitorsByPageId"];
   updatePageMonitorPositions!: PagesRepository["updatePageMonitorPositions"];
+  reconcilePage!: PagesRepository["reconcilePage"];
 
   // ============ Maintenances ============
   createMaintenance!: MaintenancesRepository["createMaintenance"];
@@ -635,6 +636,7 @@ class DbImpl {
     this.deletePageMonitorsByTag = this.pages.deletePageMonitorsByTag.bind(this.pages);
     this.deletePageMonitorsByPageId = this.pages.deletePageMonitorsByPageId.bind(this.pages);
     this.updatePageMonitorPositions = this.pages.updatePageMonitorPositions.bind(this.pages);
+    this.reconcilePage = this.pages.reconcilePage.bind(this.pages);
   }
 
   private bindMaintenancesMethods(): void {
