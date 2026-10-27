@@ -65,14 +65,19 @@
         class="bg-background/30 supports-backdrop-filter:bg-background/20 flex flex-col gap-1 rounded-3xl border p-2 shadow-2xl backdrop-blur-2xl"
       >
         {#each pages as page (page.page_path)}
-          <Button
-            variant={page.page_path === currentPath ? "outline" : "ghost"}
-            size="sm"
-            href={clientResolver(resolve, `/${page.page_path}`)}
-            class="w-full justify-start rounded-full text-xs shadow-none"
-          >
-            {page.page_title}
-          </Button>
+          <DropdownMenu.Item>
+            {#snippet child({ props })}
+              <Button
+                {...props}
+                variant={page.page_path === currentPath ? "outline" : "ghost"}
+                size="sm"
+                href={clientResolver(resolve, `/${page.page_path}`)}
+                class="w-full justify-start rounded-full text-xs shadow-none"
+              >
+                {page.page_title}
+              </Button>
+            {/snippet}
+          </DropdownMenu.Item>
         {/each}
       </DropdownMenu.Content>
     </DropdownMenu.Root>
