@@ -29,6 +29,7 @@ import { CreateNewAPIKey } from "$lib/server/controllers/apiController";
 import { GetMonitoringData, GetMonitorsParsed } from "$lib/server/controllers/monitorsController";
 import { handle } from "../../../../../hooks.server";
 import { POST } from "./+server";
+import { PATCH as patchPage } from "../pages/[page_path]/+server";
 
 const knex = (db as unknown as { knex: Knex }).knex;
 const migrations = import.meta.glob<Knex.Migration>("/migrations/*.ts", { eager: true });
@@ -214,26 +215,228 @@ describe("native standing retirement with the real database and bearer hook", ()
     expect(await snapshot()).toEqual(after);
   });
 
-  for (const kind of ["history", "incident", "maintenance", "page", "alert-config", "group"]) {
+  for (const kind of ["history", "incident", "maintenance", "page", "group"]) {
     it(`refuses ${kind} collisions and rolls back earlier changes`, async () => {
       const tag = pair.replacement;
       if (kind === "history")
         await knex("monitoring_data").insert({ monitor_tag: tag, timestamp: 120, status: "UP", type: "MANUAL" });
       if (kind === "incident")
         await knex("incident_monitors").insert({ id: 2, incident_id: 1, monitor_tag: tag, monitor_impact: "DEGRADED" });
-      if (kind === "maintenance") await knex("maintenance_monitors").insert({ id: 2, maintenance_id: 1, monitor_tag: tag });
+      if (kind === "maintenance")
+        await knex("maintenance_monitors").insert({
+          id: 2,
+          maintenance_id: 1,
+          monitor_tag: tag,
+          monitor_impact: "DOWN",
+        });
       if (kind === "page") await knex("pages_monitors").insert({ page_id: 1, monitor_tag: tag, position: 8 });
-      if (kind === "alert-config")
-        await knex("monitor_alerts_config_monitors").insert({ monitor_alerts_id: 1, monitor_tag: tag });
       if (kind === "group")
         await knex("monitors")
           .where({ tag: "group" })
-          .update({ type_data: JSON.stringify({ monitors: [{ tag: pair.tag }, { tag }] }) });
+          .update({
+            type_data: JSON.stringify({
+              monitors: [
+                { tag: pair.tag, role: "required" },
+                { tag, role: "supporting" },
+              ],
+            }),
+          });
       const before = await snapshot();
       expect((await call()).status).toBe(409);
       expect(await snapshot()).toEqual(before);
     });
   }
+
+  async function sharedSources() {
+    await knex("monitors").insert({
+      tag: "unknown-second",
+      name: "Second",
+      monitor_type: "NONE",
+      default_status: "NO_DATA",
+      type_data: "{}",
+    });
+    await knex("monitoring_data").insert([
+      {
+        monitor_tag: "unknown-second",
+        timestamp: 120,
+        status: "DOWN",
+        raw_status: "DEGRADED",
+        latency: 19,
+        type: "ERROR",
+        error_message: "synthetic timeout",
+      },
+      { monitor_tag: "unknown-second", timestamp: 150, status: "NO_DATA", type: "MANUAL" },
+    ]);
+    await knex("pages_monitors").insert({
+      page_id: 1,
+      monitor_tag: "unknown-second",
+      position: 4,
+      monitor_settings_json: '{"history":false}',
+    });
+    await knex("incident_monitors").insert({
+      id: 2,
+      incident_id: 1,
+      monitor_tag: "unknown-second",
+      monitor_impact: "DOWN",
+    });
+    await knex("maintenance_monitors").insert({
+      id: 2,
+      maintenance_id: 1,
+      monitor_tag: "unknown-second",
+      monitor_impact: "MAINTENANCE",
+    });
+    await knex("monitor_alerts_config_monitors").insert({ monitor_alerts_id: 1, monitor_tag: "unknown-second" });
+    await knex("monitors")
+      .where({ tag: "group" })
+      .update({
+        type_data: JSON.stringify({
+          monitors: [
+            { tag: pair.tag, role: "required", weight: 7 },
+            { tag: "unknown-second", role: "required", weight: 7 },
+          ],
+          selected: "kept",
+        }),
+      });
+    return [pair, { tag: "unknown-second", replacement: pair.replacement }];
+  }
+
+  it("retires a complete shared destination, collapses identical relations and samples once, and retries unchanged", async () => {
+    const pairs = await sharedSources();
+    const producer = await knex("monitors").where({ tag: pair.replacement }).first();
+    const association = await knex("pages_monitors").where({ monitor_tag: pair.tag }).first();
+    expect((await call(pairs)).status).toBe(200);
+    expect(
+      await knex("monitoring_data").where({ monitor_tag: pair.replacement }).orderBy("timestamp").pluck("timestamp"),
+    ).toEqual([120, 150, 180]);
+    expect(await knex("pages_monitors").where({ page_id: 1 })).toEqual([
+      { ...association, monitor_tag: pair.replacement },
+    ]);
+    for (const table of ["incident_monitors", "maintenance_monitors", "monitor_alerts_config_monitors"]) {
+      expect(await knex(table).where({ monitor_tag: pair.replacement })).toHaveLength(1);
+    }
+    expect(JSON.parse((await knex("monitors").where({ tag: "group" }).first()).type_data).monitors).toEqual([
+      { tag: pair.replacement, role: "required", weight: 7 },
+    ]);
+    expect(await knex("monitors").where({ tag: pair.replacement }).first()).toEqual(producer);
+    expect(
+      await knex("monitors").whereIn(
+        "tag",
+        pairs.map(({ tag }) => tag),
+      ),
+    ).toHaveLength(0);
+    const after = await snapshot();
+    deleteCache.mockRejectedValueOnce(new Error("cache interruption"));
+    expect((await call(pairs)).status).toBe(500);
+    expect((await call(pairs)).status).toBe(200);
+    expect(await snapshot()).toEqual(after);
+  });
+
+  it("keeps an existing destination association and its position while collapsing both sources", async () => {
+    const pairs = await sharedSources();
+    await knex("pages_monitors").insert({
+      page_id: 1,
+      monitor_tag: pair.replacement,
+      position: 9,
+      monitor_settings_json: '{"history":false}',
+    });
+    const retained = await knex("pages_monitors").where({ monitor_tag: pair.replacement }).first();
+    await knex("monitors")
+      .where({ tag: "group" })
+      .update({
+        type_data: JSON.stringify({
+          monitors: [
+            { tag: pair.tag, role: "required", weight: 7 },
+            { tag: "unknown-unrelated", role: "supporting", weight: 1 },
+            { tag: pair.replacement, role: "required", weight: 7 },
+            { tag: "unknown-second", role: "required", weight: 7 },
+          ],
+        }),
+      });
+    expect((await call(pairs)).status).toBe(200);
+    expect(await knex("pages_monitors").where({ page_id: 1 })).toEqual([retained]);
+    expect(JSON.parse((await knex("monitors").where({ tag: "group" }).first()).type_data).monitors).toEqual([
+      { tag: "unknown-unrelated", role: "supporting", weight: 1 },
+      { tag: pair.replacement, role: "required", weight: 7 },
+    ]);
+  });
+
+  for (const conflict of ["history", "settings", "options"]) {
+    it(`rolls back the whole shared group for conflicting ${conflict}`, async () => {
+      const pairs = await sharedSources();
+      if (conflict === "history")
+        await knex("monitoring_data")
+          .where({ monitor_tag: "unknown-second", timestamp: 120 })
+          .update({ type: "MANUAL" });
+      if (conflict === "settings")
+        await knex("pages_monitors")
+          .where({ monitor_tag: "unknown-second" })
+          .update({ monitor_settings_json: '{"history":true}' });
+      if (conflict === "options")
+        await knex("monitors")
+          .where({ tag: "group" })
+          .update({
+            type_data: JSON.stringify({
+              monitors: [
+                { tag: pair.tag, role: "required" },
+                { tag: "unknown-second", role: "supporting" },
+              ],
+            }),
+          });
+      const before = await snapshot();
+      expect((await call(pairs)).status).toBe(409);
+      expect(await snapshot()).toEqual(before);
+    });
+  }
+
+  async function pagePatch(body: unknown) {
+    const request = new Request("http://localhost/api/v4/pages/test", {
+      method: "PATCH",
+      headers: { "content-type": "application/json", authorization: `Bearer ${bearer}` },
+      body: JSON.stringify(body),
+    });
+    return handle({
+      event: {
+        request,
+        url: new URL(request.url),
+        route: { id: "/(api)/api/v4/pages/[page_path]" },
+        params: { page_path: "test" },
+        locals: {},
+        cookies: { get: () => undefined },
+      },
+      resolve: (event: never) => patchPage(event),
+    } as never);
+  }
+
+  it("preserves no-op/reorder/add/remove survivors through the actual page PATCH after retirement", async () => {
+    expect((await call()).status).toBe(200);
+    const before = await knex("pages_monitors").where({ page_id: 1 }).first();
+    for (const monitors of [
+      [pair.replacement],
+      ["unknown-unrelated", pair.replacement],
+      [pair.replacement, "unknown-unrelated"],
+      [pair.replacement],
+    ]) {
+      const response = await pagePatch({ monitors });
+      expect(response.status).toBe(200);
+      expect((await response.json()).page.monitor_reconciliation).toBe("preserve");
+      const survivor = await knex("pages_monitors").where({ monitor_tag: pair.replacement }).first();
+      expect(survivor).toEqual({ ...before, position: monitors.indexOf(pair.replacement) });
+      expect(await knex("pages_monitors").where({ page_id: 1 }).orderBy("position").pluck("monitor_tag")).toEqual(
+        monitors,
+      );
+    }
+  });
+
+  it("rolls back metadata, removals and reorders when a later membership insert fails", async () => {
+    const before = await snapshot();
+    const page = await knex("pages").where({ id: 1 }).first();
+    // A missing FK fails inside the production repository after removals, without a mocked transaction.
+    await expect(
+      db.reconcilePage(1, { page_title: "Must roll back" }, [pair.replacement, "absent-fk"]),
+    ).rejects.toThrow();
+    expect(await snapshot()).toEqual(before);
+    expect(await knex("pages").where({ id: 1 }).first()).toEqual(page);
+  });
 
   it("rolls back a whole batch when a later exact source has changed", async () => {
     await knex("monitors").where({ tag: "unknown-unrelated" }).update({ monitor_type: "API" });

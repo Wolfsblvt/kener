@@ -13,13 +13,7 @@ import type {
 import type { PageRecord } from "$lib/server/types/db";
 import GC from "$lib/global-constants";
 import { toApiPageSettings, applyPageSettingsPatch, validatePageSettings } from "$lib/server/pageSettings";
-import {
-  AddMonitorToPage,
-  DeletePage,
-  GetPageMonitors,
-  RemoveMonitorFromPage,
-  UpdatePage,
-} from "$lib/server/controllers/pagesController";
+import { DeletePage } from "$lib/server/controllers/pagesController";
 
 async function formatPageResponse(page: PageRecord): Promise<PageResponse> {
   const pageSettings = toApiPageSettings(page.page_settings_json);
@@ -28,6 +22,7 @@ async function formatPageResponse(page: PageRecord): Promise<PageResponse> {
 
   return {
     id: page.id,
+    monitor_reconciliation: "preserve",
     // The home page's empty page_path renders as the addressable ~home token
     page_path: page.page_path === "" ? GC.HOME_PAGE_TOKEN : page.page_path,
     page_title: page.page_title,
@@ -170,7 +165,10 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
   }
 
   // Validate monitors if provided
-  if (body.monitors !== undefined && Array.isArray(body.monitors)) {
+  if (body.monitors !== undefined) {
+    if (!Array.isArray(body.monitors) || body.monitors.some((tag) => typeof tag !== "string")) {
+      return json({ error: { code: "BAD_REQUEST", message: "monitors must be an array of tags" } }, { status: 400 });
+    }
     for (const monitorTag of body.monitors) {
       const monitor = await db.getMonitorByTag(monitorTag);
       if (!monitor) {
@@ -235,20 +233,7 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
     updateData.page_settings_json = applyPageSettingsPatch(page.page_settings_json, body.page_settings);
   }
 
-  // Update page if there are changes
-  if (Object.keys(updateData).length > 0) {
-    await UpdatePage(page.id, updateData);
-  }
-
-  // Handle monitors update - replace all monitors
-  if (body.monitors !== undefined && Array.isArray(body.monitors)) {
-    for (const current of await GetPageMonitors(page.id)) {
-      await RemoveMonitorFromPage(page.id, current.monitor_tag);
-    }
-    for (let i = 0; i < body.monitors.length; i++) {
-      await AddMonitorToPage(page.id, body.monitors[i], null, i);
-    }
-  }
+  await db.reconcilePage(page.id, updateData, body.monitors);
 
   // Fetch updated page
   const updatedPage = await db.getPageById(page.id);

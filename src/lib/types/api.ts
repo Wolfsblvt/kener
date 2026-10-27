@@ -507,6 +507,7 @@ export interface PageMonitorResponse {
 }
 
 export interface PageResponse {
+  monitor_reconciliation?: "preserve";
   id: number;
   /**
    * The page's path segment. The home page (stored path is empty) renders as
