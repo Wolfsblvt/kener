@@ -87,6 +87,7 @@ class DbImpl {
   getMonitors!: MonitorsRepository["getMonitors"];
   getMonitorByTag!: MonitorsRepository["getMonitorByTag"];
   deleteMonitorsByTag!: MonitorsRepository["deleteMonitorsByTag"];
+  retireStanding!: MonitorsRepository["retireStanding"];
 
   // ============ Alerts ============
   insertAlert!: AlertsRepository["insertAlert"];
@@ -466,6 +467,7 @@ class DbImpl {
     this.getMonitors = this.monitors.getMonitors.bind(this.monitors);
     this.getMonitorByTag = this.monitors.getMonitorByTag.bind(this.monitors);
     this.deleteMonitorsByTag = this.monitors.deleteMonitorsByTag.bind(this.monitors);
+    this.retireStanding = this.monitors.retireStanding.bind(this.monitors);
   }
 
   private bindAlertsMethods(): void {
