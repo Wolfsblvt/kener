@@ -92,6 +92,10 @@ With this setup `search` being `DOWN` makes the group `DEGRADED`, and `web` bein
 
 A page lists the incidents and maintenances of every monitor it shows, group members included, while the group stays one row. On that page an event names a member by where it sits: an incident on `API` inside the `Search` group reads **Search › API**, and on a page that shows a `Product` group containing `Search` it reads **Product › Search › API**. A page's own rows, and events shown anywhere without a page (a monitor's own page, embeds), use the monitor's name alone.
 
+The fork's source-owned private placement uses `section-*` group tags for navigation and `capability-*` tags for capabilities. Event chips omit those navigation sections and begin at the nearest capability, for example **Browser Home › Browser origin**. This does not change the nested monitor disclosures. Public product context and other group paths keep their names at every depth.
+
+Monitor rows label the current state separately from historical uptime over the selected period. Unknown rows say **No uptime data**; an uptime percentage does not replace the current state.
+
 ## Latency aggregation {#latency-aggregation}
 
 Group latency uses selected mode:

@@ -16,6 +16,7 @@
     notifications?: NotificationEvent[];
     loading?: boolean;
     fetchOnMount?: boolean;
+    inlineEventURLs?: string[];
   }
 
   let {
@@ -23,8 +24,12 @@
     eventsPath = "",
     notifications = $bindable<NotificationEvent[]>([]),
     loading = $bindable(false),
-    fetchOnMount = true
+    fetchOnMount = true,
+    inlineEventURLs = []
   }: Props = $props();
+
+  // The primary account already presents these events. Keep distinct recent history in the rail.
+  const railNotifications = $derived(notifications.filter((item) => !inlineEventURLs.includes(item.eventURL)));
 
   const defaultEventsPath = $derived(`/events/${format(new Date(), "MMMM-yyyy")}`);
 
@@ -92,13 +97,13 @@
   </Button>
 </div>
 
-{#if notifications.length === 0}
+{#if railNotifications.length === 0}
   <div class="text-muted-foreground px-4 py-6 text-center text-sm">
     {$t("No events to show")}
   </div>
 {:else}
   <div class="scrollbar-hidden max-h-96 overflow-y-auto">
-    {#each notifications as item, i (`${item.eventType}-${item.eventURL}-${item.eventDate}-${i}`)}
+    {#each railNotifications as item, i (`${item.eventType}-${item.eventURL}-${item.eventDate}-${i}`)}
       {@const eventId = getEventId(item.eventURL)}
       {#if item.eventURL.startsWith("/incidents/")}
         <a

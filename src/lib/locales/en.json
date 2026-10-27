@@ -1,6 +1,12 @@
 {
   "name": "English",
   "mappings": {
+    "Down": "Down",
+    "Maintenance": "Maintenance",
+    "Unknown": "Unknown",
+    "No uptime data": "No uptime data",
+    "uptime": "uptime",
+    "d": "d",
     "%latency %metric latency": "%latency %metric latency",
     "Affected Monitors (%count)": "Affected Monitors (%count)",
     "All Systems Operational": "All Systems Operational",

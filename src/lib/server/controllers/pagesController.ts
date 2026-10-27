@@ -242,7 +242,9 @@ export async function GetPageShownMonitorTags(page_id: number, includeHidden = f
 
 /**
  * Wolfsblvt fork: every monitor a page shows (see GetPageShownMonitorTags), each with the names of the groups
- * that lead to it from the page's own rows, nearest page row first. A page row has no ancestors. A monitor
+ * that lead to it from the page's own rows, nearest page row first. Source-owned private section-* groups
+ * are navigation; beneath them capability-* groups restart the compact context at that capability.
+ * Product groups and unclassified groups retain their context regardless of depth. A page row has no ancestors. A monitor
  * reachable through several groups keeps its shortest route. An event chip uses this to name where a group
  * member sits on that page, e.g. "Lens Studio › Analysis API".
  */
@@ -251,19 +253,32 @@ export async function GetPageShownMonitorContext(
   includeHidden = false,
 ): Promise<Map<string, string[]>> {
   const shown = new Map<string, string[]>();
-  let candidates = new Map<string, string[]>(
-    (await db.getActivePageMonitors(page_id, includeHidden)).map((m) => [m.monitor_tag, []]),
+  let candidates = new Map<string, { names: string[]; privatePlacement: boolean }>(
+    (await db.getActivePageMonitors(page_id, includeHidden)).map((m) => [
+      m.monitor_tag,
+      { names: [], privatePlacement: false },
+    ]),
   );
   while (candidates.size > 0) {
-    const members = new Map<string, string[]>();
+    const members = new Map<string, { names: string[]; privatePlacement: boolean }>();
     for (const monitor of await db.getMonitorsByTags([...candidates.keys()])) {
       if (shown.has(monitor.tag) || monitor.status !== "ACTIVE") continue;
       if (!includeHidden && monitor.is_hidden === "YES") continue;
-      const ancestors = candidates.get(monitor.tag) ?? [];
+      const candidate = candidates.get(monitor.tag)!;
+      const ancestors = candidate.names;
       shown.set(monitor.tag, ancestors);
       if (monitor.monitor_type !== "GROUP") continue;
+      // These are the existing placement adapter's stable identities, not a depth/label heuristic.
+      const inPrivatePlacement = candidate.privatePlacement || monitor.tag.startsWith("section-");
+      const memberContext = monitor.tag.startsWith("section-")
+        ? []
+        : inPrivatePlacement && monitor.tag.startsWith("capability-")
+          ? [monitor.name]
+          : [...ancestors, monitor.name];
       for (const tag of groupMemberTags(monitor.type_data)) {
-        if (!shown.has(tag) && !members.has(tag)) members.set(tag, [...ancestors, monitor.name]);
+        if (!shown.has(tag) && !members.has(tag)) {
+          members.set(tag, { names: memberContext, privatePlacement: inPrivatePlacement });
+        }
       }
     }
     candidates = members;

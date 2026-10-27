@@ -51,7 +51,7 @@
         {$t("incident")}
       </span>
       <span class="text-xs font-medium text-{incident.state.toLowerCase()}">{$t(incident.state)}</span>
-      <Item.Title class="min-w-0 text-base wrap-break-word break-all">
+      <Item.Title class="min-w-0 text-base wrap-anywhere">
         <a {target} class="hover:underline" href={clientResolver(resolve, `/incidents/${incident.id}`)}>
           {incident.title}
         </a>
