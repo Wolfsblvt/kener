@@ -31,6 +31,8 @@ export function getAlertText({
   }
 
   if (kind === "help") {
+    if (alert_for === GC.STATUS && alert_value === GC.NO_DATA)
+      return "Requires explicit API observation mode. This reports missing evidence, not an application outage.";
     switch (alert_for) {
       case GC.STATUS:
         return "Alert when monitor status equals this value";
@@ -48,6 +50,8 @@ export function getAlertText({
   const value = alert_value ?? "";
 
   if (alert_for === GC.STATUS) {
+    if (alert_value === GC.NO_DATA)
+      return `Notify after ${thresholdValue} consecutive missing observations or fully missed poll opportunities. Resolve after ${resolveThreshold} observed HTTP response(s), including known failures. Finite maintenance freezes this notice.`;
     return `Alert when ${thresholdValue} consecutive checks result in ${value}. Resolve after ${resolveThreshold} successful check(s).`;
   }
 

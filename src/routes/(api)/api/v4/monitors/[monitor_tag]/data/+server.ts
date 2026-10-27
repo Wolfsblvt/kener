@@ -8,6 +8,7 @@ import type {
   BadRequestResponse,
 } from "$lib/types/api";
 import GC from "$lib/global-constants";
+import { IsExplicitApiObservation } from "$lib/server/services/explicitObservation";
 import { UpdateMonitoringData } from "$lib/server/controllers/monitorsController";
 import { GetMinuteStartTimestampUTC } from "$lib/server/tool";
 
@@ -61,6 +62,15 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     status: d.status,
     latency: d.latency,
     type: d.type,
+    ...(IsExplicitApiObservation(monitor)
+      ? {
+          raw_status: ([GC.UP, GC.DOWN, GC.DEGRADED, GC.MAINTENANCE, GC.NO_DATA] as string[]).includes(
+            d.raw_status ?? "",
+          )
+            ? d.raw_status
+            : null,
+        }
+      : {}),
   }));
 
   const response: GetMonitoringDataResponse = {

@@ -100,6 +100,8 @@ export interface MonitorResponse {
 
 export interface GetMonitorsListResponse {
   monitors: MonitorRecordTyped[];
+  /** Additive native observation capability; older servers omit it. */
+  observation_contract?: "wolf-explicit-api-observation-v1";
 }
 
 export interface GetMonitorResponse {
@@ -155,6 +157,8 @@ export interface DeleteMonitorResponse {
 
 // Monitoring Data API types
 export interface MonitoringDataPoint {
+  /** Finite underlying observation, present for explicit API observations only. */
+  raw_status?: string | null;
   monitor_tag: string;
   timestamp: number;
   status: string | null;

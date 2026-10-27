@@ -18,11 +18,11 @@ Each configuration needs:
 
 ## Alert value by type {#alert-value-by-type}
 
-| Alert type | Value format                      |
-| :--------- | :-------------------------------- |
-| `STATUS`   | `DOWN` or `DEGRADED`              |
-| `LATENCY`  | latency threshold in milliseconds |
-| `UPTIME`   | minimum uptime percentage         |
+| Alert type | Value format                                                   |
+| :--------- | :------------------------------------------------------------- |
+| `STATUS`   | `DOWN`, `DEGRADED`, or `NO_DATA` for explicit API observations |
+| `LATENCY`  | latency threshold in milliseconds                              |
+| `UPTIME`   | minimum uptime percentage                                      |
 
 ## Threshold behavior {#threshold-behavior}
 
@@ -30,6 +30,14 @@ Each configuration needs:
 - **Success threshold**: consecutive passing evaluations before `RESOLVED`
 
 Higher thresholds reduce noise; lower thresholds detect faster.
+
+## No-observation notices {#no-observation}
+
+For an API monitor with `type_data.observation_mode: "explicit"`, choose STATUS/NO_DATA to report missing evidence separately from a known application response failure. The failure threshold counts consecutive native NO_DATA samples or fully missed poll opportunities. The success threshold requires that many observed HTTP responses, including known DOWN/DEGRADED responses: restored observation is not application recovery.
+
+The existing application scheduler checks this condition once per minute even when the monitor execution queue produces no new result. It writes no synthetic healthy/history sample and creates no new scheduler. Finite native maintenance freezes the notice; the condition is evaluated again when the event ends. Missing, default, manual and future records are not observation success. A stopped scheduler/Redis needs an observer outside that failure domain.
+
+These operator notices use triggers without creating application-outage incidents. Keep `create_incident: "NO"`; the API rejects YES for this condition, including partial updates. Other alert configurations retain their behavior.
 
 ## Severity and incidents {#severity-and-incidents}
 

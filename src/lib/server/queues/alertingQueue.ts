@@ -34,6 +34,8 @@ import sendEmail from "../notification/email_notification.js";
 import sendWebhook from "$lib/server/notification/webhook_notification.js";
 import sendSlack from "$lib/server/notification/slack_notification.js";
 import sendDiscord from "$lib/server/notification/discord_notification.js";
+import { IsExplicitApiObservation, ReadObservationAlertState } from "../services/explicitObservation.js";
+import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 
 import type { SiteDataForNotification } from "../notification/types.js";
 let alertingQueue: Queue | null = null;
@@ -53,6 +55,13 @@ interface JobData {
   monitor_description: string;
   numerator: string;
   denominator: string;
+  observation_monitor?: {
+    tag: string;
+    monitor_type: string;
+    type_data: unknown;
+    cron?: string | null;
+    created_at?: string | Date;
+  };
   ts: number;
   status: string;
 }
@@ -177,8 +186,15 @@ const addWorker = () => {
   if (worker) return worker;
 
   worker = q.createWorker(getQueue(), async (job: Job): Promise<void> => {
-    const { monitor_name, monitor_tag, numerator, denominator, status, monitor_alerts_configured } =
-      job.data as JobData;
+    const {
+      monitor_name,
+      monitor_tag,
+      numerator,
+      denominator,
+      status,
+      monitor_alerts_configured,
+      observation_monitor,
+    } = job.data as JobData;
     const siteData = await GetAllSiteData();
     const templateSiteVars = siteDataToVariables(siteData);
     try {
@@ -190,9 +206,19 @@ const addWorker = () => {
       // Determine if monitor is affected based on alert type
       let isAffected = false;
       let isUp = false;
+      const observationState =
+        typeOfConfig === GC.STATUS && alertValue === GC.NO_DATA && observation_monitor
+          ? await ReadObservationAlertState(
+              observation_monitor,
+              failureThreshold,
+              successThreshold,
+              GetMinuteStartNowTimestampUTC(),
+            )
+          : null;
       if (typeOfConfig === GC.STATUS) {
-        //alertValue can be DOWN or DEGRADED
-        isAffected = await db.consecutivelyStatusFor(monitor_tag, alertValue, failureThreshold);
+        isAffected = observationState
+          ? observationState.affected
+          : await db.consecutivelyStatusFor(monitor_tag, alertValue, failureThreshold);
       } else if (typeOfConfig === GC.LATENCY) {
         isAffected = await db.consecutivelyLatencyGreaterThan(monitor_tag, parseFloat(alertValue), failureThreshold);
       } else if (typeOfConfig === GC.UPTIME) {
@@ -241,7 +267,9 @@ const addWorker = () => {
         // Resolve any existing alert
         if (activeAlert) {
           if (typeOfConfig === GC.STATUS) {
-            isUp = await db.consecutivelyStatusFor(monitor_tag, GC.UP, successThreshold);
+            isUp = observationState
+              ? observationState.recovered
+              : await db.consecutivelyStatusFor(monitor_tag, GC.UP, successThreshold);
           } else if (typeOfConfig === GC.LATENCY) {
             isUp = await db.consecutivelyLatencyLessThan(monitor_tag, parseFloat(alertValue), successThreshold);
           } else if (typeOfConfig === GC.UPTIME) {
@@ -288,7 +316,13 @@ const addWorker = () => {
   return worker;
 };
 
-export const push = async (monitor_tag: string, ts: number, status: string, options?: JobsOptions) => {
+const enqueue = async (
+  monitor_tag: string,
+  ts: number,
+  status: string,
+  options?: JobsOptions,
+  observationOnly = false,
+) => {
   if (!options) {
     options = {};
   }
@@ -322,6 +356,11 @@ export const push = async (monitor_tag: string, ts: number, status: string, opti
   }
 
   for (const monitorAlertConfig of monitorAlertsConfigurations) {
+    if (
+      observationOnly &&
+      (monitorAlertConfig.alert_for !== GC.STATUS || monitorAlertConfig.alert_value !== GC.NO_DATA)
+    )
+      continue;
     const deDupId = `${monitor_tag}-${ts}-${monitorAlertConfig.id}`;
 
     const jobOptions: JobsOptions = {
@@ -345,11 +384,29 @@ export const push = async (monitor_tag: string, ts: number, status: string, opti
         denominator: monitor.monitor_settings_json?.uptime_formula_denominator || GC.defaultDenominatorStr,
         ts,
         status,
+        ...(IsExplicitApiObservation(monitor)
+          ? {
+              observation_monitor: {
+                tag: monitor.tag,
+                monitor_type: monitor.monitor_type,
+                type_data: { observation_mode: "explicit" },
+                cron: monitor.cron,
+                created_at: monitor.created_at,
+              },
+            }
+          : {}),
       },
       jobOptions,
     );
   }
 };
+
+export const push = (monitor_tag: string, ts: number, status: string, options?: JobsOptions) =>
+  enqueue(monitor_tag, ts, status, options);
+
+/** Called by the existing application scheduler: a silent execution queue still has an observable loss boundary. */
+export const checkObservationAlerts = (monitor_tag: string, ts: number) =>
+  enqueue(monitor_tag, ts, GC.NO_DATA, undefined, true);
 
 //graceful shutdown
 export const shutdown = async () => {
