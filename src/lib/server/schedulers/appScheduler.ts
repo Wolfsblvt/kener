@@ -7,9 +7,13 @@ import { getSchedulers, addJobToSchedulerQueue, removeJobFromSchedulerQueue } fr
 
 import { GetMonitorsParsed } from "../controllers/controller.js";
 import { UpdateMaintenanceEventStatuses } from "../controllers/maintenanceController.js";
+import { IsExplicitApiObservation } from "../services/explicitObservation.js";
+import { checkObservationAlerts } from "../queues/alertingQueue.js";
+import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 
 let appSchedulerQueue: Queue | null = null;
 let worker: Worker | null = null;
+let observationAlertMinute: number | null = null;
 const queueName = "appSchedulerQueue";
 const jobNamePrefix = "mainJob";
 
@@ -72,6 +76,14 @@ const addWorker = () => {
 
     //we have to update the maintenances events also
     await UpdateMaintenanceEventStatuses();
+
+    // Reuse this scheduler rather than add a watcher/job. No synthetic history/healthy samples are written.
+    const now = GetMinuteStartNowTimestampUTC();
+    if (observationAlertMinute !== now) {
+      for (const monitor of activeMonitors.filter(IsExplicitApiObservation))
+        await checkObservationAlerts(monitor.tag, now);
+      observationAlertMinute = now;
+    }
 
     return activeMonitors.length;
   });

@@ -28,6 +28,8 @@ export interface NoneMonitorTypeData {
   overrideWithLastKnownStatus: boolean;
 }
 export interface ApiMonitorTypeData {
+  /** Opt in to explicit no-observation semantics; legacy API monitors keep their existing behavior. */
+  observation_mode?: "explicit";
   url: string;
   body?: string;
   headers?: Array<{ key: string; value: string }>;

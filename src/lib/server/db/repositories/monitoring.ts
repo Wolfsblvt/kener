@@ -80,6 +80,16 @@ export class MonitoringRepository extends BaseRepository {
       .limit(limit);
   }
 
+  /** Native observations/overlay boundaries only: manual/default/future rows cannot refresh observation alerts. */
+  async getObservationSamples(monitor_tag: string, nowTs: number, limit: number): Promise<MonitoringData[]> {
+    return await this.knex("monitoring_data")
+      .where("monitor_tag", monitor_tag)
+      .where("timestamp", "<=", nowTs)
+      .whereIn("type", [...OBSERVED_CHECK_TYPES, ...OVERLAY_TYPES])
+      .orderBy("timestamp", "desc")
+      .limit(limit);
+  }
+
   async getMonitoringDataPaginated(
     page: number,
     limit: number,

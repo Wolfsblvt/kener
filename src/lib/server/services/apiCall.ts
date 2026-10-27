@@ -93,11 +93,19 @@ class ApiCall {
     let errorMessage = "";
     let resp = "";
     let timeoutError = false;
+    const explicit = this.monitor.type_data.observation_mode === "explicit";
+    let requestOutcome:
+      | { outcome: "http"; statusCode: number }
+      | { outcome: "transport"; reason: "timeout" | "transport" } = {
+      outcome: "transport",
+      reason: "transport",
+    };
     const start = performance.now();
     try {
       let data = await axios(url, options);
       statusCode = data.status;
       resp = data.data;
+      requestOutcome = { outcome: "http", statusCode };
     } catch (err: unknown) {
       const error = err as {
         code?: string;
@@ -113,11 +121,20 @@ class ApiCall {
 
       if (error.response?.status !== undefined) {
         statusCode = error.response.status;
+        requestOutcome = { outcome: "http", statusCode };
       }
       if (error.response?.data !== undefined) {
         resp = error.response.data;
       } else {
         resp = error.message || "";
+      }
+      if (requestOutcome.outcome === "transport") {
+        requestOutcome = { outcome: "transport", reason: timeoutError ? "timeout" : "transport" };
+      }
+      // Explicit observation receipts contain no raw URL, configuration or error text.
+      if (explicit) {
+        errorMessage = requestOutcome.outcome === "transport" ? "No HTTP response observed" : "HTTP response observed";
+        if (requestOutcome.outcome === "transport") resp = "";
       }
     } finally {
       const end = performance.now();
@@ -128,7 +145,7 @@ class ApiCall {
     }
 
     let evalResp: EvalResponse | undefined = undefined;
-    let modules = { cheerio };
+    let modules = { cheerio, request: requestOutcome };
 
     try {
       const evalFunction = new Function(
@@ -140,15 +157,32 @@ class ApiCall {
       );
       evalResp = await evalFunction(statusCode, latency, resp, modules);
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        if (error.message.length > 200) {
-          errorMessage += ` | Eval error: ${error.message.substring(0, 200)}...`;
-        } else {
-          errorMessage += ` | Eval error: ${error.message}`;
-        }
+      if (explicit) {
+        errorMessage = "Response evaluation unavailable";
       } else {
-        errorMessage += ` | Eval error: ${String(error)}`;
+        if (error instanceof Error) {
+          if (error.message.length > 200) {
+            errorMessage += ` | Eval error: ${error.message.substring(0, 200)}...`;
+          } else {
+            errorMessage += ` | Eval error: ${error.message}`;
+          }
+        } else {
+          errorMessage += ` | Eval error: ${String(error)}`;
+        }
       }
+    }
+
+    // A failed transport cannot be turned into health by a callback or a monitor default.
+    if (explicit && requestOutcome.outcome === "transport") {
+      return {
+        status: GC.NO_DATA,
+        latency,
+        type: timeoutError ? GC.TIMEOUT : GC.ERROR,
+        error_message: "No HTTP response observed",
+      };
+    }
+    if (explicit && (!evalResp || ![GC.UP, GC.DOWN, GC.DEGRADED, GC.NO_DATA].includes(evalResp.status as never))) {
+      return { status: GC.NO_DATA, latency, type: GC.ERROR, error_message: "Response evaluation unavailable" };
     }
 
     if (!evalResp || typeof evalResp !== "object") {
@@ -165,7 +199,11 @@ class ApiCall {
         type: GC.ERROR,
       };
       errorMessage += ` | Eval must return an object with a 'status' field (one of: ${GC.UP}, ${GC.DOWN}, ${GC.DEGRADED}, ${GC.MAINTENANCE}), but 'status' was missing`;
-    } else if (([GC.UP, GC.DOWN, GC.DEGRADED, GC.MAINTENANCE] as string[]).indexOf(evalResp.status) === -1) {
+    } else if (
+      ([GC.UP, GC.DOWN, GC.DEGRADED, GC.MAINTENANCE, ...(explicit ? [GC.NO_DATA] : [])] as string[]).indexOf(
+        evalResp.status,
+      ) === -1
+    ) {
       evalResp = {
         status: GC.DOWN,
         latency: latency,
@@ -175,8 +213,15 @@ class ApiCall {
     } else {
       evalResp.type = GC.REALTIME;
       // Ensure latency is a valid number; fall back to measured latency
-      if (typeof evalResp.latency !== "number" || isNaN(evalResp.latency)) {
-        errorMessage += ` | Eval 'latency' must be a number, got ${JSON.stringify(evalResp.latency)}. Using measured latency instead`;
+      if (
+        typeof evalResp.latency !== "number" ||
+        isNaN(evalResp.latency) ||
+        (explicit && (!Number.isFinite(evalResp.latency) || evalResp.latency < 0))
+      ) {
+        errorMessage = explicit
+          ? "Invalid evaluation latency; using measured latency"
+          : errorMessage +
+            ` | Eval 'latency' must be a number, got ${JSON.stringify(evalResp.latency)}. Using measured latency instead`;
         evalResp.latency = latency;
       }
     }

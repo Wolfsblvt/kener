@@ -6,6 +6,8 @@ import { UptimeCalculator } from "$lib/server/tool";
 import type { MonitorBarResponse } from "./get";
 import { ResolveSslExpiresAtMs } from "$lib/clientTools";
 import { AttachSslCacheFields } from "$lib/server/controllers/monitorsController";
+import { IsExplicitApiObservation, ReadObservationStatus } from "$lib/server/services/explicitObservation";
+import { GetMinuteStartNowTimestampUTC } from "$lib/server/tool";
 
 interface ParsedMonitorSettings {
   uptime_formula_numerator?: string;
@@ -80,13 +82,17 @@ export const buildMonitorBarResponse = async (
     latestStatus && !isSsl ? Promise.resolve(null) : db.getLatestMonitoringData(monitor.tag),
   ]);
   const latest = isSsl ? await AttachSslCacheFields(latestData) : latestData;
+  const currentStatus =
+    !latestStatus && IsExplicitApiObservation(monitor)
+      ? await ReadObservationStatus(monitor, latest, GetMinuteStartNowTimestampUTC())
+      : latestStatus || (latest?.status as StatusType) || GC.NO_DATA;
 
   return buildMonitorBarResponseFromRawData(
     monitor,
     rawUptimeData,
     days,
     endOfDayTodayAtTz,
-    latestStatus || (latest?.status as StatusType) || GC.NO_DATA,
+    currentStatus as StatusType,
     latest,
   );
 };
