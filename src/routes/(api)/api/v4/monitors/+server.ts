@@ -1,5 +1,6 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
 import db from "$lib/server/db/db";
+import { EXPLICIT_API_OBSERVATION_CONTRACT } from "$lib/server/services/explicitObservation";
 import type {
   GetMonitorsListResponse,
   MonitorResponse,
@@ -30,6 +31,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
   const response: GetMonitorsListResponse = {
     monitors: rawMonitors,
+    observation_contract: EXPLICIT_API_OBSERVATION_CONTRACT,
   };
 
   return json(response);

@@ -71,7 +71,8 @@
 
   const statusValueOptions = [
     { value: GC.DOWN, label: GC.DOWN },
-    { value: GC.DEGRADED, label: GC.DEGRADED }
+    { value: GC.DEGRADED, label: GC.DEGRADED },
+    { value: GC.NO_DATA, label: "NO_DATA · No observation" }
   ];
 
   const severityOptions: { value: AlertSeverityType; label: string }[] = [
@@ -86,7 +87,9 @@
 
   // Computed labels
   const alertValueLabel = $derived(getAlertText({ kind: "label", alert_for: form.alert_for }));
-  const alertValueHelp = $derived(getAlertText({ kind: "help", alert_for: form.alert_for }));
+  const alertValueHelp = $derived(
+    getAlertText({ kind: "help", alert_for: form.alert_for, alert_value: form.alert_value })
+  );
   const alertDescriptionText = $derived(
     getAlertText({
       kind: "description",
@@ -325,11 +328,10 @@
                   <Command.Empty>No monitors found.</Command.Empty>
                   <Command.Group>
                     {#each monitors as monitor (monitor.tag)}
-                      <Command.Item
-                        value={monitor.name}
-                        onSelect={() => toggleMonitor(monitor.tag)}
-                      >
-                        <CheckIcon class="size-4 {form.monitor_tags.includes(monitor.tag) ? 'opacity-100' : 'opacity-0'}" />
+                      <Command.Item value={monitor.name} onSelect={() => toggleMonitor(monitor.tag)}>
+                        <CheckIcon
+                          class="size-4 {form.monitor_tags.includes(monitor.tag) ? 'opacity-100' : 'opacity-0'}"
+                        />
                         {monitor.name}
                       </Command.Item>
                     {/each}
@@ -343,11 +345,7 @@
               {#each form.monitor_tags as tag (tag)}
                 <Badge variant="secondary" class="gap-1 pr-1">
                   {monitors.find((m) => m.tag === tag)?.name || tag}
-                  <button
-                    type="button"
-                    class="hover:bg-muted rounded-sm p-0.5"
-                    onclick={() => toggleMonitor(tag)}
-                  >
+                  <button type="button" class="hover:bg-muted rounded-sm p-0.5" onclick={() => toggleMonitor(tag)}>
                     <XIcon class="size-3" />
                   </button>
                 </Badge>
@@ -379,7 +377,16 @@
         <div class="flex flex-col gap-2">
           <Label for="alert-value">{alertValueLabel}</Label>
           {#if form.alert_for === "STATUS"}
-            <Select.Root type="single" value={form.alert_value} onValueChange={(v) => v && (form.alert_value = v)}>
+            <Select.Root
+              type="single"
+              value={form.alert_value}
+              onValueChange={(v) => {
+                if (v) {
+                  form.alert_value = v;
+                  if (v === GC.NO_DATA) form.create_incident = GC.NO;
+                }
+              }}
+            >
               <Select.Trigger id="alert-value" class="w-full">
                 {form.alert_value}
               </Select.Trigger>
@@ -447,6 +454,7 @@
           <Select.Root
             type="single"
             value={form.create_incident}
+            disabled={form.alert_for === GC.STATUS && form.alert_value === GC.NO_DATA}
             onValueChange={(v) => v && (form.create_incident = v as YesNoType)}
           >
             <Select.Trigger id="create-incident" class="w-full">

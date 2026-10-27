@@ -36,6 +36,7 @@ import {
 import alertingQueue from "../queues/alertingQueue.js";
 import { CollapseStatusCounts } from "../../clientTools.js";
 import { CurrentStatusOf } from "../services/statusFreshness.js";
+import { IsExplicitApiObservation, ReadObservationStatus } from "../services/explicitObservation.js";
 import { translate, isLocaleAvailable } from "../i18n.js";
 import type { HeartbeatMonitor, GroupMonitorTypeData } from "../types/monitor.js";
 import { IsValidProxyURL, IsValidHeartbeatSecret, HEARTBEAT_SECRET_RULE } from "../../anywhere.js";
@@ -390,7 +391,9 @@ export const GetLatestStatusActiveAll = async (): Promise<{ status: string; know
   let unknownCount = 0;
   for (const monitor of monitors) {
     const lastObj = await GetLastMonitoringValue(monitor.tag, () => GetLatestMonitoringData(monitor.tag));
-    const status = CurrentStatusOf(monitor.cron, lastObj, nowTs);
+    const status = IsExplicitApiObservation(monitor)
+      ? await ReadObservationStatus(monitor, lastObj, nowTs)
+      : CurrentStatusOf(monitor.cron, lastObj, nowTs);
     if (status === GC.UP) {
       counts.countOfUp++;
     } else if (status === GC.DOWN) {
@@ -414,7 +417,16 @@ export const GetLatestStatusActiveAll = async (): Promise<{ status: string; know
 //getLatestMonitoringDataAllActive
 export const GetLatestMonitoringDataAllActive = async (monitor_tags: string[]): Promise<MonitoringData[]> => {
   let latestData = await db.getLatestMonitoringDataAllActive(monitor_tags);
-  return latestData;
+  const monitors = new Map((await db.getMonitors({ tags: monitor_tags })).map((monitor) => [monitor.tag, monitor]));
+  const now = GetMinuteStartNowTimestampUTC();
+  return await Promise.all(
+    latestData.map(async (row) => {
+      const monitor = monitors.get(row.monitor_tag);
+      return monitor && IsExplicitApiObservation(monitor)
+        ? { ...row, status: await ReadObservationStatus(monitor, row, now) }
+        : row;
+    }),
+  );
 };
 
 /**
@@ -685,7 +697,9 @@ export const GetBadge = async (badgeType: BadgeType, params: BadgeParams): Promi
       const m = monitors[0];
       name = m.name;
       const lastObj = await GetLastMonitoringValue(m.tag, () => GetLatestMonitoringData(m.tag));
-      status = CurrentStatusOf(m.cron, lastObj, GetMinuteStartNowTimestampUTC());
+      status = IsExplicitApiObservation(m)
+        ? await ReadObservationStatus(m, lastObj, GetMinuteStartNowTimestampUTC())
+        : CurrentStatusOf(m.cron, lastObj, GetMinuteStartNowTimestampUTC());
     }
 
     // Resolve locale: validate against activated locales, fall back to configured default

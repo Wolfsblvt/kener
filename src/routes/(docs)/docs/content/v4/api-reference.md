@@ -5,6 +5,12 @@ description: Complete REST API documentation for monitors, incidents, and status
 
 Kener provides a comprehensive REST API for managing monitors, incidents, and retrieving status information.
 
+## Explicit API observation capability {#explicit-api-observation-capability}
+
+The authenticated `GET /api/v4/monitors` response includes additive `observation_contract: "wolf-explicit-api-observation-v1"` when the native request-outcome, NO_DATA, freshness and observation-alert path is implemented. Older servers omit it; consumers must not assume the capability from the upstream version string. Existing response fields remain unchanged.
+
+Set `type_data.observation_mode: "explicit"` on an API monitor to opt in. Its selected history responses may additionally include a finite `raw_status`, preserving underlying observation during a finite overlay without exposing request/configuration/error contents. See [API monitor semantics](/docs/v4/monitors/api#explicit-observations) and [no-observation notices](/docs/v4/alerting/alert-configurations#no-observation).
+
 ## Base URL
 
 ```

@@ -162,6 +162,8 @@
     </div>
     <p class="text-muted-foreground mt-1 text-xs">
       Function receives (statusCode, responseTime, responseRaw, modules) and should return {`{ status, latency }`}
+      . modules.request distinguishes HTTP responses from transport loss. The API-only observation_mode: "explicit" preserves
+      NO_DATA through the native pipeline; existing monitor behavior is unchanged when omitted.
     </p>
   </div>
 </div>

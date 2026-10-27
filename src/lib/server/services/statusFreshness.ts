@@ -10,7 +10,7 @@ const LONGEST_LOOKBACK_MS = 400 * 24 * 60 * MINUTE_MS;
  * schedule that fires several times a minute counts once. Croner only walks forward, so this widens the lookback
  * until it holds two run minutes.
  */
-function PreviousScheduledMinute(cron: string, atMs: number): number | null {
+function PreviousScheduledMinute(cron: string, atMs: number, missedRuns = 1): number | null {
   let schedule: Cron;
   try {
     schedule = new Cron(cron, { paused: true });
@@ -24,7 +24,7 @@ function PreviousScheduledMinute(cron: string, atMs: number): number | null {
       runMinutes.add(Math.floor(next.getTime() / MINUTE_MS) * 60);
       next = schedule.nextRun(next);
     }
-    if (runMinutes.size >= 2) return [...runMinutes][runMinutes.size - 2];
+    if (runMinutes.size > missedRuns) return [...runMinutes][runMinutes.size - missedRuns - 1];
   }
   return null;
 }
@@ -38,9 +38,21 @@ function PreviousScheduledMinute(cron: string, atMs: number): number | null {
  * last-known is not current. A schedule that cannot be read cannot vouch for freshness either.
  */
 export function IsCurrentResult(cron: string | null | undefined, resultTs: number, nowTs: number): boolean {
-  if (!cron) return false;
+  if (!cron || !Number.isFinite(resultTs) || resultTs > nowTs) return false;
   const previousRunMinute = PreviousScheduledMinute(cron, nowTs * 1000 + MINUTE_MS - 1);
   return previousRunMinute !== null && resultTs >= previousRunMinute;
+}
+
+/** True only after the selected number of fully missed scheduled run minutes, allowing the current run in flight. */
+export function HasMissedObservationRuns(
+  cron: string | null | undefined,
+  anchorTs: number,
+  nowTs: number,
+  runs: number,
+): boolean {
+  if (!cron || !Number.isFinite(anchorTs) || anchorTs > nowTs || !Number.isInteger(runs) || runs < 1) return false;
+  const previous = PreviousScheduledMinute(cron, nowTs * 1000 + MINUTE_MS - 1, runs);
+  return previous !== null && anchorTs < previous;
 }
 
 /**

@@ -9,6 +9,7 @@ import monitorResponseQueue from "./monitorResponseQueue";
 import GC from "../../global-constants.js";
 import { resolveConfirmedStatus } from "../services/confirmationThreshold.js";
 import { IsRoleAwareGroup } from "../services/groupCall.js";
+import { IsExplicitApiObservation } from "../services/explicitObservation.js";
 
 let monitorExecuteQueue: Queue | null = null;
 let worker: Worker | null = null;
@@ -35,6 +36,8 @@ async function manualMaintenance(
   // rows and the freeze gate; fall back to "now" only when called without a ts.
   let startTs = ts !== undefined ? ts : GetMinuteStartNowTimestampUTC();
   let maintenanceArr = await db.getMaintenancesByMonitorTagRealtime(monitor.tag, startTs);
+  if (IsExplicitApiObservation(monitor))
+    maintenanceArr = maintenanceArr.filter((row) => row.end_date_time !== null && startTs < row.end_date_time);
 
   let impact = "";
   if (maintenanceArr.length == 0) {
@@ -186,7 +189,12 @@ const addWorker = () => {
     const defaultStatus = defaultData[ts]?.status;
     const realtimeStatus = realtimeData[ts]?.status;
     let realtimeDataForMerge = realtimeData;
-    if (defaultStatus && realtimeStatus === GC.NO_DATA && !IsRoleAwareGroup(monitor)) {
+    if (
+      defaultStatus &&
+      realtimeStatus === GC.NO_DATA &&
+      !IsRoleAwareGroup(monitor) &&
+      !IsExplicitApiObservation(monitor)
+    ) {
       // Apply the preference *before* merging so incident/maintenance can still override later.
       // Also avoid carrying over realtime NO_DATA error_message.
       realtimeDataForMerge = { ...realtimeData };

@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { IsExplicitApiObservation } from "../services/explicitObservation.js";
 import type {
   MonitorAlertConfigRecord,
   MonitorAlertConfigInsert,
@@ -37,7 +38,7 @@ export type {
 const VALID_ALERT_FOR: AlertForType[] = ["STATUS", "LATENCY", "UPTIME"];
 const VALID_SEVERITY: AlertSeverityType[] = ["CRITICAL", "WARNING"];
 const VALID_YES_NO: YesNoType[] = ["YES", "NO"];
-const VALID_STATUS_VALUES = ["DOWN", "DEGRADED", "UP"];
+const VALID_STATUS_VALUES = ["DOWN", "DEGRADED", "UP", "NO_DATA"];
 
 function validateAlertFor(value: string): asserts value is AlertForType {
   if (!VALID_ALERT_FOR.includes(value as AlertForType)) {
@@ -86,6 +87,9 @@ function validateThreshold(value: number, fieldName: string): void {
 }
 
 function validateMonitorAlertConfigInput(data: MonitorAlertConfigCreateInput | MonitorAlertConfigUpdateInput): void {
+  if (data.alert_for === "STATUS" && data.alert_value === "NO_DATA" && data.create_incident === "YES") {
+    throw new Error("No-observation alerts notify operators; they do not create application incidents.");
+  }
   if ("alert_for" in data && data.alert_for) {
     validateAlertFor(data.alert_for);
   }
@@ -136,6 +140,9 @@ export async function CreateMonitorAlertConfig(
     const monitor = await db.getMonitorByTag(tag);
     if (!monitor) {
       throw new Error(`Monitor with tag '${tag}' not found`);
+    }
+    if (data.alert_for === "STATUS" && data.alert_value === "NO_DATA" && !IsExplicitApiObservation(monitor)) {
+      throw new Error("No-observation alerts require an API monitor with observation_mode explicit.");
     }
   }
 
@@ -190,6 +197,16 @@ export async function UpdateMonitorAlertConfig(
   const existingConfig = await db.getMonitorAlertConfigById(data.id);
   if (!existingConfig) {
     throw new Error(`Monitor alert config with id '${data.id}' not found`);
+  }
+  const effective = { ...existingConfig, ...data };
+  validateMonitorAlertConfigInput(effective);
+  if (effective.alert_for === "STATUS" && effective.alert_value === "NO_DATA") {
+    const tags = data.monitor_tags ?? (await db.getMonitorAlertConfigWithTriggers(data.id))?.monitor_tags ?? [];
+    for (const tag of tags) {
+      const monitor = await db.getMonitorByTag(tag);
+      if (!monitor || !IsExplicitApiObservation(monitor))
+        throw new Error("No-observation alerts require explicit API monitors.");
+    }
   }
 
   // If alert_value is being updated, we need alert_for for validation
