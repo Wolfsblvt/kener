@@ -41,6 +41,8 @@ import type { MonitoringData } from "../types/db";
 import responseQueue from "../queues/monitorResponseQueue";
 import { GetLastMonitoringValue } from "../cache/setGet";
 import { GetBadge, GetLatestStatusActiveAll } from "../controllers/monitorsController";
+import GroupCall from "./groupCall";
+import type { GroupMonitor } from "../types/monitor";
 const knex = (db as unknown as { knex: Knex }).knex;
 const migrations = import.meta.glob<Knex.Migration>("/migrations/*.ts", { eager: true });
 const now = Date.UTC(2027, 0, 15, 8, 0) / 1000;
@@ -112,18 +114,56 @@ async function openIncident(impact = "DOWN") {
   await knex("incident_monitors").insert({ incident_id: 1, monitor_tag: monitor.tag, monitor_impact: impact });
 }
 
+function capabilityGroup(): GroupMonitor {
+  return {
+    tag: "capability-group",
+    monitor_type: "GROUP",
+    type_data: { monitors: [{ tag: monitor.tag, role: "required", weight: 1 }] },
+  } as unknown as GroupMonitor;
+}
+
+async function openMaintenance() {
+  await knex("maintenances").insert({
+    id: 1,
+    title: "Finite maintenance",
+    status: "ACTIVE",
+    start_date_time: now - 60,
+    rrule: "FREQ=MINUTELY;COUNT=1",
+    duration_seconds: 120,
+  });
+  await knex("maintenance_monitors").insert({
+    maintenance_id: 1,
+    monitor_tag: monitor.tag,
+    monitor_impact: "MAINTENANCE",
+  });
+  await knex("maintenances_events").insert({
+    maintenance_id: 1,
+    start_date_time: now - 60,
+    end_date_time: now + 60,
+    status: "ONGOING",
+  });
+}
+
 describe("native explicit observation persistence and consumers", () => {
+  it("keeps active incident impact in a role-aware group even before its first observation", async () => {
+    await openIncident();
+    expect((await new GroupCall(capabilityGroup()).execute(now)).status).toBe("DOWN");
+    await knex("incidents").where({ id: 1 }).update({ state: "RESOLVED", end_date_time: now });
+    expect((await new GroupCall(capabilityGroup()).execute(now)).status).toBe("NO_DATA");
+  });
   it.each(["UP", "DOWN", "NO_DATA"])(
     "preserves active incident impact over underlying %s, then unwraps only after it ends",
     async (raw) => {
       await openIncident();
       const latest = await sample(0, "DOWN", "INCIDENT", raw);
       expect(await ReadObservationStatus(monitor, latest, now)).toBe("DOWN");
+      expect((await new GroupCall(capabilityGroup()).execute(now)).status).toBe("DOWN");
       expect(
         (await buildMonitorBarResponse((await db.getMonitorByTag(monitor.tag)) as never, 1, now)).currentStatus,
       ).toBe("DOWN");
       await knex("incidents").where({ id: 1 }).update({ state: "RESOLVED", end_date_time: now });
       expect(await ReadObservationStatus(monitor, latest, now)).toBe(raw);
+      expect((await new GroupCall(capabilityGroup()).execute(now)).status).toBe(raw);
       expect(
         (await buildMonitorBarResponse((await db.getMonitorByTag(monitor.tag)) as never, 1, now)).currentStatus,
       ).toBe(raw);
@@ -136,37 +176,21 @@ describe("native explicit observation persistence and consumers", () => {
       await sample(5, impact, "INCIDENT", "NO_DATA");
       await sample(0, impact, "INCIDENT", "NO_DATA");
       expect(await ReadObservationStatus(monitor, await db.getLatestMonitoringData(monitor.tag), now)).toBe(impact);
+      expect((await new GroupCall(capabilityGroup()).execute(now)).status).toBe(impact);
       expect(await ReadObservationAlertState(monitor, 2, 2, now)).toEqual({ affected: true, recovered: false });
       await knex("monitoring_data").del();
       await sample(5, impact, "INCIDENT", "UP");
       await sample(0, impact, "INCIDENT", "DOWN");
       expect(await ReadObservationAlertState(monitor, 2, 2, now)).toEqual({ affected: false, recovered: true });
       expect(await ReadObservationStatus(monitor, await db.getLatestMonitoringData(monitor.tag), now)).toBe(impact);
+      expect((await new GroupCall(capabilityGroup()).execute(now)).status).toBe(impact);
       expect((await knex("incidents").where({ id: 1 }).first()).state).toBe("INVESTIGATING");
     },
   );
   it.each(["UP", "DOWN"])(
     "keeps cache and DB readers aligned at maintenance expiry with underlying %s before another poll",
     async (raw) => {
-      await knex("maintenances").insert({
-        id: 1,
-        title: "Finite maintenance",
-        status: "ACTIVE",
-        start_date_time: now - 60,
-        rrule: "FREQ=MINUTELY;COUNT=1",
-        duration_seconds: 120,
-      });
-      await knex("maintenance_monitors").insert({
-        maintenance_id: 1,
-        monitor_tag: monitor.tag,
-        monitor_impact: "MAINTENANCE",
-      });
-      await knex("maintenances_events").insert({
-        maintenance_id: 1,
-        start_date_time: now - 60,
-        end_date_time: now + 60,
-        status: "ONGOING",
-      });
+      await openMaintenance();
       await responseQueue.push(monitor.tag, now, {
         status: "MAINTENANCE",
         type: "MAINTENANCE",
@@ -186,12 +210,48 @@ describe("native explicit observation persistence and consumers", () => {
             expected === "UP" ? "Operational" : expected === "DOWN" ? "Down" : "Maintenance",
           );
         expect((await buildMonitorBarResponse(record, 1, ts)).currentStatus).toBe(expected);
+        expect((await new GroupCall(capabilityGroup()).execute(ts)).status).toBe(expected);
       }
       const history = await db.getMonitoringData(monitor.tag, now - 60, now + 120);
       expect(history).toHaveLength(1);
       expect(history[0]).toMatchObject({ status: "MAINTENANCE", raw_status: raw });
     },
   );
+  it("keeps a nested role-aware section aligned after maintenance expiry without another leaf poll", async () => {
+    await openMaintenance();
+    await responseQueue.push(monitor.tag, now, {
+      status: "MAINTENANCE",
+      type: "MAINTENANCE",
+      latency: 1,
+      raw_status: "UP",
+    });
+    const group = capabilityGroup();
+    await knex("monitors").insert({
+      tag: group.tag,
+      name: group.tag,
+      status: "ACTIVE",
+      monitor_type: "GROUP",
+      cron: "* * * * *",
+      type_data: JSON.stringify(group.type_data),
+    });
+    const section = {
+      tag: "section",
+      monitor_type: "GROUP",
+      type_data: { monitors: [{ tag: group.tag, role: "required", weight: 1 }] },
+    } as unknown as GroupMonitor;
+    for (const [ts, expected] of [
+      [now, "MAINTENANCE"],
+      [now + 60, "UP"],
+    ] as const) {
+      vi.setSystemTime(ts * 1000);
+      const result = await new GroupCall(group).execute(ts);
+      expect(result.status).toBe(expected);
+      await responseQueue.push(group.tag, ts, { ...result, raw_status: result.status });
+      expect((await new GroupCall(section).execute(ts)).status).toBe(expected);
+    }
+    expect(await db.getMonitoringData(monitor.tag, now - 60, now + 120)).toHaveLength(1);
+    expect((await new GroupCall(section).execute(now + 240)).status).toBe("NO_DATA");
+  });
   it("exposes the finite contract and keeps actual NO_DATA in history/current bars", async () => {
     await sample(0, "NO_DATA", "ERROR");
     const history = await db.getMonitoringData(monitor.tag, now - 60, now + 60);

@@ -4,6 +4,8 @@ import type { GroupMonitor, GroupMonitorMember, MonitoringResult } from "../type
 import { GetLastMonitoringValue } from "../cache/setGet.js";
 import { GetLatestMonitoringData, GetMonitorsParsed } from "../controllers/controller.js";
 import { IsCurrentResult } from "./statusFreshness.js";
+import { IsExplicitApiObservation, ReadObservationStatus } from "./explicitObservation.js";
+import type { MonitoringData } from "../types/db.js";
 
 /**
  * Numeric scores for each status (normalized 0–1).
@@ -95,21 +97,17 @@ class GroupCall {
     const members = this.monitor.type_data.monitors;
 
     // Collect each member's latest status + latency
-    const statusMap = new Map<string, { status: string; latency: number; timestamp: number }>();
+    const statusMap = new Map<string, MonitoringData>();
 
     for (const member of members) {
-      const lastObj = (await GetLastMonitoringValue(member.tag, () => GetLatestMonitoringData(member.tag))) as {
-        status: string;
-        latency: number;
-        timestamp: number;
-      } | null;
+      const lastObj = await GetLastMonitoringValue(member.tag, () => GetLatestMonitoringData(member.tag));
       if (lastObj) {
         statusMap.set(member.tag, lastObj);
       }
     }
 
     // --- Latency calculation ---
-    const latencyValues = [...statusMap.values()].map((v) => v.latency);
+    const latencyValues = [...statusMap.values()].map((v) => v.latency ?? 0);
     const latencyCalculationType = this.monitor.type_data.latencyCalculation || "AVG";
     let latency = 0;
     if (latencyValues.length > 0) {
@@ -122,15 +120,21 @@ class GroupCall {
       }
     }
 
-    const statusByTag = new Map([...statusMap].map(([tag, value]) => [tag, value.status]));
+    const statusByTag = new Map([...statusMap].map(([tag, value]) => [tag, value.status ?? GC.NO_DATA]));
     if (members.some((m) => m.role)) {
-      // A role-aware group must not report last-known results as current. Keep only results from each member's
-      // latest scheduled runs; an inactive or deleted member has no schedule and so no current result.
-      const cronByTag = new Map(
-        (await GetMonitorsParsed({ tags: members.map((m) => m.tag), status: "ACTIVE" })).map((m) => [m.tag, m.cron]),
+      // Explicit members share the direct readers' current event/observation owner. Other members, including
+      // nested groups, retain scheduled currentness; inactive/deleted members have no current result.
+      const monitorByTag = new Map(
+        (await GetMonitorsParsed({ tags: members.map((m) => m.tag), status: "ACTIVE" })).map((m) => [m.tag, m]),
       );
-      for (const [tag, value] of statusMap) {
-        if (!IsCurrentResult(cronByTag.get(tag), value.timestamp, startOfMinute)) statusByTag.delete(tag);
+      for (const { tag } of members) {
+        const monitor = monitorByTag.get(tag);
+        const value = statusMap.get(tag);
+        if (monitor && IsExplicitApiObservation(monitor)) {
+          statusByTag.set(tag, await ReadObservationStatus(monitor, value, startOfMinute));
+        } else if (!value || !IsCurrentResult(monitor?.cron, value.timestamp, startOfMinute)) {
+          statusByTag.delete(tag);
+        }
       }
     }
     const status = RollupGroupStatus(members, statusByTag);
