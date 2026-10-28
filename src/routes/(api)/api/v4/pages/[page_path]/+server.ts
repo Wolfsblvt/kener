@@ -13,7 +13,7 @@ import type {
 import type { PageRecord } from "$lib/server/types/db";
 import GC from "$lib/global-constants";
 import { toApiPageSettings, applyPageSettingsPatch, validatePageSettings } from "$lib/server/pageSettings";
-import { DeletePage } from "$lib/server/controllers/pagesController";
+import { DeletePage, ReconcilePage } from "$lib/server/controllers/pagesController";
 
 async function formatPageResponse(page: PageRecord): Promise<PageResponse> {
   const pageSettings = toApiPageSettings(page.page_settings_json);
@@ -233,7 +233,7 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
     updateData.page_settings_json = applyPageSettingsPatch(page.page_settings_json, body.page_settings);
   }
 
-  await db.reconcilePage(page.id, updateData, body.monitors);
+  await ReconcilePage(page.id, updateData, body.monitors);
 
   // Fetch updated page
   const updatedPage = await db.getPageById(page.id);

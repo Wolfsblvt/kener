@@ -81,6 +81,17 @@ export async function UpdatePage(id: number, data: Partial<PageRecordInsert>): P
 }
 
 /**
+ * Reconcile a page's metadata and ordered monitor membership atomically.
+ */
+export async function ReconcilePage(
+  id: number,
+  data: Partial<PageRecordInsert>,
+  monitorTags?: string[],
+): Promise<void> {
+  await db.reconcilePage(id, data, monitorTags);
+}
+
+/**
  * Delete page by ID
  */
 export async function DeletePage(id: number): Promise<void> {

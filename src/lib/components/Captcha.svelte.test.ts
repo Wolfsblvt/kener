@@ -2,9 +2,32 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import Captcha, { loadScript } from "./Captcha.svelte";
 
+const providerScripts = [
+  "https://js.hcaptcha.com/1/api.js",
+  "https://www.google.com/recaptcha/api.js",
+  "https://challenges.cloudflare.com/turnstile/v0/api.js",
+];
+
+function markScriptLoaded(src: string) {
+  const script = document.createElement("script");
+  script.src = src;
+  script.setAttribute("data-kener-script-loaded", "true");
+  document.head.appendChild(script);
+  return script;
+}
+
 describe("Captcha", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    document.querySelectorAll("script[src]").forEach((script) => {
+      if (providerScripts.includes((script as HTMLScriptElement).src)) script.remove();
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).grecaptcha;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).hcaptcha;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).turnstile;
   });
 
   it("renders nothing and reports not-required when no provider is configured", async () => {
@@ -39,13 +62,13 @@ describe("Captcha", () => {
   });
 
   it("renders the widget container and reports required when a provider is configured", async () => {
-    // A provider no other test here loads: loadScript caches per src at module
-    // scope, so this test's real (unmocked) script load would leak into any
-    // later test that simulates that provider's load (Turnstile and hCaptcha both do).
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "recaptcha", siteKey: "site-key-123" }) }),
     );
+    markScriptLoaded(providerScripts[1]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).grecaptcha = { render: vi.fn(() => "widget-1") };
     const onReady = vi.fn();
     const onVerify = vi.fn();
 
@@ -53,6 +76,11 @@ describe("Captcha", () => {
     await expect.element(screen.getByTestId("captcha-widget")).toBeInTheDocument();
 
     expect(onReady).toHaveBeenCalledWith(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((window as any).grecaptcha.render).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({ sitekey: "site-key-123" }),
+    );
   });
 
   it("reports null when a solved token expires or errors, so the parent re-disables submit", async () => {
@@ -61,10 +89,7 @@ describe("Captcha", () => {
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "hcaptcha", siteKey: "site-key-123" }) }),
     );
 
-    const script = document.createElement("script");
-    script.src = "https://js.hcaptcha.com/1/api.js";
-    document.head.appendChild(script);
-    setTimeout(() => script.dispatchEvent(new Event("load")), 10);
+    markScriptLoaded(providerScripts[0]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let opts: any;
@@ -94,10 +119,6 @@ describe("Captcha", () => {
     opts.callback("solved-again");
     opts["error-callback"]();
     expect(onVerify).toHaveBeenLastCalledWith(null);
-
-    document.head.removeChild(script);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).hcaptcha;
   });
 
   it("does not walk back the required state when the provider SDK fails after being detected", async () => {
@@ -106,17 +127,7 @@ describe("Captcha", () => {
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "hcaptcha", siteKey: "site-key-123" }) }),
     );
 
-    // Pre-seed the script tag so loadScript finds it already present (no
-    // real network call needed), then fire its load event shortly after —
-    // loadScript now always waits for a real load/error event rather than
-    // assuming presence means "already loaded" (see the concurrent-load
-    // test below), so this simulates it finishing normally. Then make the
-    // provider global's render() throw, simulating the SDK failing to
-    // initialize after the script itself loaded.
-    const script = document.createElement("script");
-    script.src = "https://js.hcaptcha.com/1/api.js";
-    document.head.appendChild(script);
-    setTimeout(() => script.dispatchEvent(new Event("load")), 10);
+    markScriptLoaded(providerScripts[0]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).hcaptcha = {
       render: () => {
@@ -132,10 +143,6 @@ describe("Captcha", () => {
     // block before asserting it never reported not-required afterwards.
     await new Promise((r) => setTimeout(r, 50));
     expect(onReady).not.toHaveBeenCalledWith(false);
-
-    document.head.removeChild(script);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).hcaptcha;
   });
 
   it("renders Turnstile without going through ready(), which throws for an async-loaded script", async () => {
@@ -164,14 +171,9 @@ describe("Captcha", () => {
 
     // The global only appears once the script has run, right before its load
     // event — so a render() attempted before the load would find nothing.
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    document.head.appendChild(script);
-    setTimeout(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).turnstile = turnstile;
-      script.dispatchEvent(new Event("load"));
-    }, 10);
+    markScriptLoaded(providerScripts[2]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).turnstile = turnstile;
 
     const onVerify = vi.fn();
     await render(Captcha, { onVerify, onReady: vi.fn() });
@@ -181,12 +183,7 @@ describe("Captcha", () => {
 
     opts.callback("solved-token");
     expect(onVerify).toHaveBeenLastCalledWith("solved-token");
-
-    document.head.removeChild(script);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).turnstile;
   });
-
 });
 
 describe("loadScript", () => {
