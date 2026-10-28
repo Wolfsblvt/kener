@@ -66,6 +66,8 @@ A required member that cannot be seen never makes the group `UP`, and it does no
 
 A result is **current** when it comes from the member's previous scheduled run or later (the run due this minute may still be in flight). A member that is paused, deleted, or has missed a whole run of its own cron schedule is unknown, even if its last result was `UP`. A member updated only through the API stays current while its runs carry the status forward, for example a None monitor with **Override with last known status**. Groups without roles keep the weighted score, including last-known results.
 
+For an API member using [explicit observations](/docs/v4/monitors/api), role-aware groups use the same current status as its direct row and badges. Active incidents and finite maintenance keep their impact. When an event ends, the next group evaluation uses the underlying observation immediately, without waiting for another API poll. Nested groups still need their own current scheduled result; keep their execution delay after their members.
+
 A group's own **Default Status** does not replace this `NO_DATA`: with roles, `NO_DATA` is the group's finding, not a missing check.
 
 Use exactly `required` or `supporting`: the API does not validate the value, and any other value counts as `supporting`. Weights must still sum to `1`, as in [Minimum setup](#minimum-setup).

@@ -35,6 +35,8 @@ Replay these patches in order:
 
 Inline expansion reuses upstream's member rendering. Explicit API observations reuse the earlier cron-freshness and truthful-current-status seams. The other patches are independent. Offering any patch upstream is a separate decision.
 
+The [coherent status qualification](qualification/coherent-status.md) records the combined presentation, preserving association/retirement, native observation and fixture corrections. A coherent source candidate is distinct from release-branch acceptance, a built image or adoption by any deployment.
+
 ## Upgrade an upstream release
 
 1. Resolve the exact upstream release or security-fix commit and update the untouched `main` mirror.
