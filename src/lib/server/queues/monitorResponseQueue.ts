@@ -70,6 +70,7 @@ const addWorker = () => {
       status: status,
       latency: latency,
       type: type,
+      raw_status: raw_status,
       ...(expiry_at ? { expiry_at, issuer_cn, issuer_o, cert_trusted } : {}),
     });
     alertingQueue.push(monitorTag, ts, status);

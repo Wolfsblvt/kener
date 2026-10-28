@@ -4,6 +4,29 @@ vi.mock("$lib/server/db/db", async () => {
   const { CreateTestDb } = await import("$lib/server/db/testDatabase");
   return { default: await CreateTestDb() };
 });
+// Substitute only queue/Redis transport: the production response processor, database insert,
+// last-status writer and JSON cache serialization all run, including on a cache hit.
+const transport = vi.hoisted(() => ({
+  cache: new Map<string, string>(),
+  process: undefined as undefined | ((job: { data: unknown }) => Promise<unknown>),
+}));
+vi.mock("$lib/server/redisConnector", () => ({
+  redisIOConnection: () => ({
+    get: async (key: string) => transport.cache.get(key) ?? null,
+    set: async (key: string, value: string) => transport.cache.set(key, value),
+    del: async (key: string) => transport.cache.delete(key),
+  }),
+}));
+vi.mock("$lib/server/queues/q", () => ({
+  default: {
+    createQueue: () => ({ add: async (_name: string, data: unknown) => transport.process!({ data }) }),
+    createWorker: (_queue: unknown, process: typeof transport.process) => {
+      transport.process = process;
+      return { on: vi.fn() };
+    },
+  },
+}));
+vi.mock("$lib/server/queues/alertingQueue", () => ({ default: { push: vi.fn() } }));
 import db from "../db/db";
 import {
   IsExplicitApiObservation,
@@ -15,6 +38,9 @@ import { CreateMonitorAlertConfig, UpdateMonitorAlertConfig } from "../controlle
 import { GET as listMonitors } from "../../../routes/(api)/api/v4/monitors/+server";
 import { buildMonitorBarResponse } from "../api-server/monitor-bar/shared";
 import type { MonitoringData } from "../types/db";
+import responseQueue from "../queues/monitorResponseQueue";
+import { GetLastMonitoringValue } from "../cache/setGet";
+import { GetBadge, GetLatestStatusActiveAll } from "../controllers/monitorsController";
 const knex = (db as unknown as { knex: Knex }).knex;
 const migrations = import.meta.glob<Knex.Migration>("/migrations/*.ts", { eager: true });
 const now = Date.UTC(2027, 0, 15, 8, 0) / 1000;
@@ -41,6 +67,8 @@ afterAll(() => {
   vi.useRealTimers();
 });
 beforeEach(async () => {
+  transport.cache.clear();
+  vi.setSystemTime(now * 1000);
   await knex("monitor_alerts_v2").del();
   await knex("monitor_alerts_config_monitors").del();
   await knex("monitor_alerts_config_triggers").del();
@@ -48,6 +76,8 @@ beforeEach(async () => {
   await knex("maintenance_monitors").del();
   await knex("maintenances_events").del();
   await knex("maintenances").del();
+  await knex("incident_monitors").del();
+  await knex("incidents").del();
   await knex("monitoring_data").del();
   await knex("monitors").del();
   await knex("monitors").insert({
@@ -69,7 +99,99 @@ async function sample(age: number, status: string, type = "REALTIME", raw_status
   });
 }
 
+async function openIncident(impact = "DOWN") {
+  await knex("incidents").insert({
+    id: 1,
+    title: "Application incident",
+    status: "OPEN",
+    state: "INVESTIGATING",
+    incident_type: "INCIDENT",
+    incident_source: "DASHBOARD",
+    start_date_time: now - 3600,
+  });
+  await knex("incident_monitors").insert({ incident_id: 1, monitor_tag: monitor.tag, monitor_impact: impact });
+}
+
 describe("native explicit observation persistence and consumers", () => {
+  it.each(["UP", "DOWN", "NO_DATA"])(
+    "preserves active incident impact over underlying %s, then unwraps only after it ends",
+    async (raw) => {
+      await openIncident();
+      const latest = await sample(0, "DOWN", "INCIDENT", raw);
+      expect(await ReadObservationStatus(monitor, latest, now)).toBe("DOWN");
+      expect(
+        (await buildMonitorBarResponse((await db.getMonitorByTag(monitor.tag)) as never, 1, now)).currentStatus,
+      ).toBe("DOWN");
+      await knex("incidents").where({ id: 1 }).update({ state: "RESOLVED", end_date_time: now });
+      expect(await ReadObservationStatus(monitor, latest, now)).toBe(raw);
+      expect(
+        (await buildMonitorBarResponse((await db.getMonitorByTag(monitor.tag)) as never, 1, now)).currentStatus,
+      ).toBe(raw);
+    },
+  );
+  it.each(["DOWN", "DEGRADED", "MAINTENANCE"])(
+    "observes loss and known-response recovery while an application incident with %s impact remains open",
+    async (impact) => {
+      await openIncident(impact);
+      await sample(5, impact, "INCIDENT", "NO_DATA");
+      await sample(0, impact, "INCIDENT", "NO_DATA");
+      expect(await ReadObservationStatus(monitor, await db.getLatestMonitoringData(monitor.tag), now)).toBe(impact);
+      expect(await ReadObservationAlertState(monitor, 2, 2, now)).toEqual({ affected: true, recovered: false });
+      await knex("monitoring_data").del();
+      await sample(5, impact, "INCIDENT", "UP");
+      await sample(0, impact, "INCIDENT", "DOWN");
+      expect(await ReadObservationAlertState(monitor, 2, 2, now)).toEqual({ affected: false, recovered: true });
+      expect(await ReadObservationStatus(monitor, await db.getLatestMonitoringData(monitor.tag), now)).toBe(impact);
+      expect((await knex("incidents").where({ id: 1 }).first()).state).toBe("INVESTIGATING");
+    },
+  );
+  it.each(["UP", "DOWN"])(
+    "keeps cache and DB readers aligned at maintenance expiry with underlying %s before another poll",
+    async (raw) => {
+      await knex("maintenances").insert({
+        id: 1,
+        title: "Finite maintenance",
+        status: "ACTIVE",
+        start_date_time: now - 60,
+        rrule: "FREQ=MINUTELY;COUNT=1",
+        duration_seconds: 120,
+      });
+      await knex("maintenance_monitors").insert({
+        maintenance_id: 1,
+        monitor_tag: monitor.tag,
+        monitor_impact: "MAINTENANCE",
+      });
+      await knex("maintenances_events").insert({
+        maintenance_id: 1,
+        start_date_time: now - 60,
+        end_date_time: now + 60,
+        status: "ONGOING",
+      });
+      await responseQueue.push(monitor.tag, now, {
+        status: "MAINTENANCE",
+        type: "MAINTENANCE",
+        latency: 1,
+        raw_status: raw,
+      });
+      expect(await GetLastMonitoringValue(monitor.tag)).toMatchObject({ status: "MAINTENANCE", raw_status: raw });
+      const record = (await db.getMonitorByTag(monitor.tag)) as never;
+      for (const [ts, expected] of [
+        [now, "MAINTENANCE"],
+        [now + 60, raw],
+      ] as const) {
+        vi.setSystemTime(ts * 1000);
+        expect(await GetLatestStatusActiveAll()).toEqual({ status: expected, knownCount: 1 });
+        for (const tag of [monitor.tag, "_"])
+          expect(await (await GetBadge("status", { tag })).text()).toContain(
+            expected === "UP" ? "Operational" : expected === "DOWN" ? "Down" : "Maintenance",
+          );
+        expect((await buildMonitorBarResponse(record, 1, ts)).currentStatus).toBe(expected);
+      }
+      const history = await db.getMonitoringData(monitor.tag, now - 60, now + 120);
+      expect(history).toHaveLength(1);
+      expect(history[0]).toMatchObject({ status: "MAINTENANCE", raw_status: raw });
+    },
+  );
   it("exposes the finite contract and keeps actual NO_DATA in history/current bars", async () => {
     await sample(0, "NO_DATA", "ERROR");
     const history = await db.getMonitoringData(monitor.tag, now - 60, now + 60);

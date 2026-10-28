@@ -53,25 +53,35 @@ export function ObservationStatusOf(
   return CurrentStatusOf(monitor.cron, observed, nowTs);
 }
 
-/** Finite native maintenance overrides presentation only while its actual event is active. */
+async function HasActiveObservationMaintenance(monitor: ObservationMonitor, nowTs: number): Promise<boolean> {
+  const maintenance = await db.getMaintenancesByMonitorTagRealtime(monitor.tag, nowTs);
+  return maintenance.some(
+    (row) =>
+      row.monitor_impact === GC.MAINTENANCE &&
+      row.end_date_time !== null &&
+      Number.isFinite(row.end_date_time) &&
+      row.start_date_time <= nowTs &&
+      nowTs < row.end_date_time,
+  );
+}
+
+/** Active events retain their presentation impact; ended overlays expose the underlying observation. */
 export async function ReadObservationStatus(
   monitor: ObservationMonitor,
   latest: MonitoringData | null | undefined,
   nowTs: number,
 ): Promise<string> {
   if (!IsExplicitApiObservation(monitor)) return latest?.status || GC.NO_DATA;
-  const maintenance = await db.getMaintenancesByMonitorTagRealtime(monitor.tag, nowTs);
-  if (
-    maintenance.some(
-      (row) =>
-        row.monitor_impact === GC.MAINTENANCE &&
-        row.end_date_time !== null &&
-        Number.isFinite(row.end_date_time) &&
-        row.start_date_time <= nowTs &&
-        nowTs < row.end_date_time,
-    )
-  )
-    return GC.MAINTENANCE;
+  if (await HasActiveObservationMaintenance(monitor, nowTs)) return GC.MAINTENANCE;
+  const incidents = await db.getIncidentsByMonitorTagRealtime(monitor.tag, nowTs);
+  // Match the native execution overlay's impact selection, including manual maintenance incidents.
+  let incidentImpact: string | undefined;
+  for (const incident of incidents) {
+    if (incident.monitor_impact === GC.MAINTENANCE || incident.monitor_impact === GC.DOWN)
+      return incident.monitor_impact;
+    if (incident.monitor_impact === GC.DEGRADED) incidentImpact = GC.DEGRADED;
+  }
+  if (incidentImpact) return incidentImpact;
   return ObservationStatusOf(monitor, latest, nowTs);
 }
 
@@ -84,9 +94,11 @@ export async function ReadObservationAlertState(
 ): Promise<{ affected: boolean; recovered: boolean }> {
   const rows = await db.getObservationSamples(monitor.tag, nowTs, Math.max(failureThreshold, successThreshold));
   const latest = rows[0];
-  const current = await ReadObservationStatus(monitor, latest, nowTs);
-  if (current === GC.MAINTENANCE) return { affected: false, recovered: false };
-  const real = (row: MonitoringData) => row.type === GC.REALTIME || row.type === GC.ERROR || row.type === GC.TIMEOUT;
+  // Application incidents affect presentation, never the independent observation clock or notices.
+  if (await HasActiveObservationMaintenance(monitor, nowTs)) return { affected: false, recovered: false };
+  const current = ObservationStatusOf(monitor, latest, nowTs);
+  const observedStatus = (row: MonitoringData) =>
+    overlayTypes.includes(row.type ?? "") ? row.raw_status : (row.raw_status ?? row.status);
   const unknown = rows.slice(0, failureThreshold);
   const known = rows.slice(0, successThreshold);
   let anchor = latest?.timestamp;
@@ -96,14 +108,15 @@ export async function ReadObservationAlertState(
   return {
     affected:
       current === GC.NO_DATA &&
-      (missed ||
-        (unknown.length === failureThreshold && unknown.every((row) => real(row) && row.status === GC.NO_DATA))),
+      (missed || (unknown.length === failureThreshold && unknown.every((row) => observedStatus(row) === GC.NO_DATA))),
     // An observed HTTP failure restores observation, even when the app's own DOWN alert must stay active.
     recovered:
       current !== GC.NO_DATA &&
       known.length === successThreshold &&
       known.every(
-        (row) => real(row) && row.type === GC.REALTIME && knownStatuses.includes(row.raw_status ?? row.status ?? ""),
+        (row) =>
+          (row.type === GC.REALTIME || overlayTypes.includes(row.type ?? "")) &&
+          knownStatuses.includes(observedStatus(row) ?? ""),
       ),
   };
 }
