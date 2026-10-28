@@ -66,6 +66,8 @@ async function (statusCode, latency, body, modules) {
 
 Explicit observations retain NO_DATA through confirmation, queue, history and current presentation. Default/manual/future values cannot certify current health. Current evidence expires after a fully missed scheduled poll opportunity, allowing the current run to be in flight; cadence comes from the monitor's cron. Finite native maintenance remains visible only during its actual event and does not stop polling. Expiry exposes the underlying observation again.
 
+An active application incident keeps its presentation impact while the underlying observation still drives separate observation-loss and recovery notices. Resolving the incident exposes the current underlying observation. Cached overall status and badges retain that same evidence across finite maintenance expiry, before another poll runs.
+
 In explicit mode, an evaluator returns UP, DOWN, DEGRADED or NO_DATA. A callback cannot assert planned maintenance: that state requires an actual finite native event. Invalid callback diagnostics and latency values are replaced by fixed messages and measured latency, keeping arbitrary callback values out of persisted error text.
 
 Use a separate [STATUS/NO_DATA alert](/docs/v4/alerting/alert-configurations#no-observation) for observation loss. An observed HTTP response can resolve that notice while the application's DOWN alert remains active. The scheduler cannot notify after its whole process or Redis is unavailable; retain an independent service-health observer for that failure domain.

@@ -37,6 +37,8 @@ For an API monitor with `type_data.observation_mode: "explicit"`, choose STATUS/
 
 The existing application scheduler checks this condition once per minute even when the monitor execution queue produces no new result. It writes no synthetic healthy/history sample and creates no new scheduler. Finite native maintenance freezes the notice; the condition is evaluated again when the event ends. Missing, default, manual and future records are not observation success. A stopped scheduler/Redis needs an observer outside that failure domain.
 
+An open application incident does not freeze these notices: observation loss can trigger and recover while the incident and its presentation impact remain active. Only finite native maintenance freezes observation notices.
+
 These operator notices use triggers without creating application-outage incidents. Keep `create_incident: "NO"`; the API rejects YES for this condition, including partial updates. Other alert configurations retain their behavior.
 
 ## Severity and incidents {#severity-and-incidents}
