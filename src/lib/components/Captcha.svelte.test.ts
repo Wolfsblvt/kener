@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "vitest-browser-svelte";
 import Captcha, { loadScript } from "./Captcha.svelte";
 
@@ -8,20 +8,44 @@ const providerScripts = [
   "https://challenges.cloudflare.com/turnstile/v0/api.js",
 ];
 
-function markScriptLoaded(src: string) {
-  const script = document.createElement("script");
-  script.src = src;
-  script.setAttribute("data-kener-script-loaded", "true");
-  document.head.appendChild(script);
-  return script;
+function interceptProviderScriptRequests() {
+  const scripts: HTMLScriptElement[] = [];
+  const appendChild = document.head.appendChild.bind(document.head);
+
+  vi.spyOn(document.head, "appendChild").mockImplementation((node) => {
+    if (node instanceof HTMLScriptElement && providerScripts.includes(node.src)) {
+      scripts.push(node);
+      return node;
+    }
+
+    return appendChild(node);
+  });
+
+  return scripts;
+}
+
+async function finishProviderScriptLoad(scripts: HTMLScriptElement[], sdkAlreadyUsed: () => boolean) {
+  await vi.waitFor(() => expect(scripts.length === 1 || sdkAlreadyUsed()).toBe(true));
+  const script = scripts[0];
+  if (!script) return;
+
+  expect(script.isConnected).toBe(false);
+  script.dispatchEvent(new Event("load"));
+}
+
+function expectNoProviderScriptRequests() {
+  const requests = performance.getEntriesByType("resource").map((entry) => entry.name);
+  expect(requests.some((request) => providerScripts.some((src) => request.startsWith(src)))).toBe(false);
 }
 
 describe("Captcha", () => {
+  beforeEach(() => {
+    performance.clearResourceTimings();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
-    document.querySelectorAll("script[src]").forEach((script) => {
-      if (providerScripts.includes((script as HTMLScriptElement).src)) script.remove();
-    });
+    vi.restoreAllMocks();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).grecaptcha;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,34 +86,36 @@ describe("Captcha", () => {
   });
 
   it("renders the widget container and reports required when a provider is configured", async () => {
+    const scripts = interceptProviderScriptRequests();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "recaptcha", siteKey: "site-key-123" }) }),
     );
-    markScriptLoaded(providerScripts[1]);
+    const widgetRender = vi.fn(() => "widget-1");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).grecaptcha = { render: vi.fn(() => "widget-1") };
+    (window as any).grecaptcha = { render: widgetRender };
     const onReady = vi.fn();
     const onVerify = vi.fn();
 
     const screen = await render(Captcha, { onVerify, onReady });
+    await finishProviderScriptLoad(scripts, () => widgetRender.mock.calls.length > 0);
     await expect.element(screen.getByTestId("captcha-widget")).toBeInTheDocument();
 
     expect(onReady).toHaveBeenCalledWith(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((window as any).grecaptcha.render).toHaveBeenCalledWith(
+    expect(widgetRender).toHaveBeenCalledWith(
       expect.any(HTMLElement),
       expect.objectContaining({ sitekey: "site-key-123" }),
     );
+    expectNoProviderScriptRequests();
   });
 
   it("reports null when a solved token expires or errors, so the parent re-disables submit", async () => {
+    const scripts = interceptProviderScriptRequests();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "hcaptcha", siteKey: "site-key-123" }) }),
     );
-
-    markScriptLoaded(providerScripts[0]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let opts: any;
@@ -104,6 +130,7 @@ describe("Captcha", () => {
 
     const onVerify = vi.fn();
     await render(Captcha, { onVerify, onReady: vi.fn() });
+    await finishProviderScriptLoad(scripts, () => opts !== undefined);
 
     await vi.waitFor(() => expect(opts).toBeDefined());
 
@@ -119,33 +146,37 @@ describe("Captcha", () => {
     opts.callback("solved-again");
     opts["error-callback"]();
     expect(onVerify).toHaveBeenLastCalledWith(null);
+    expectNoProviderScriptRequests();
   });
 
   it("does not walk back the required state when the provider SDK fails after being detected", async () => {
+    const scripts = interceptProviderScriptRequests();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "hcaptcha", siteKey: "site-key-123" }) }),
     );
 
-    markScriptLoaded(providerScripts[0]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).hcaptcha = {
-      render: () => {
-        throw new Error("provider SDK init failed");
-      },
-    };
+    const widgetRender = vi.fn(() => {
+      throw new Error("provider SDK init failed");
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).hcaptcha = { render: widgetRender };
 
     const onReady = vi.fn();
     await render(Captcha, { onVerify: vi.fn(), onReady });
+    await finishProviderScriptLoad(scripts, () => widgetRender.mock.calls.length > 0);
 
     await vi.waitFor(() => expect(onReady).toHaveBeenCalledWith(true));
     // Give the (failing) render attempt a chance to run and hit the catch
     // block before asserting it never reported not-required afterwards.
     await new Promise((r) => setTimeout(r, 50));
     expect(onReady).not.toHaveBeenCalledWith(false);
+    expectNoProviderScriptRequests();
   });
 
-  it("renders Turnstile without going through ready(), which throws for an async-loaded script", async () => {
+  it("waits for the late Turnstile SDK and renders without calling ready()", async () => {
+    const scripts = interceptProviderScriptRequests();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ json: async () => ({ provider: "turnstile", siteKey: "site-key-123" }) }),
@@ -169,20 +200,27 @@ describe("Captcha", () => {
       },
     };
 
-    // The global only appears once the script has run, right before its load
-    // event — so a render() attempted before the load would find nothing.
-    markScriptLoaded(providerScripts[2]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).turnstile = turnstile;
-
     const onVerify = vi.fn();
     await render(Captcha, { onVerify, onReady: vi.fn() });
+    const script = await waitForProviderScript(scripts);
+    expect(script.isConnected).toBe(false);
+    expect(turnstile.render).not.toHaveBeenCalled();
+    expect(turnstile.ready).not.toHaveBeenCalled();
+
+    // The SDK global becomes available as the detached script fixture settles,
+    // matching the browser's real async-load ordering without attaching a URL.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).turnstile = turnstile;
+    script.dispatchEvent(new Event("load"));
 
     await vi.waitFor(() => expect(opts).toBeDefined());
     expect(opts.sitekey).toBe("site-key-123");
+    expect(turnstile.render).toHaveBeenCalledTimes(1);
+    expect(turnstile.ready).not.toHaveBeenCalled();
 
     opts.callback("solved-token");
     expect(onVerify).toHaveBeenLastCalledWith("solved-token");
+    expectNoProviderScriptRequests();
   });
 });
 
