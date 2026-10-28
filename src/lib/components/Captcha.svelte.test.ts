@@ -187,25 +187,28 @@ describe("Captcha", () => {
     // `render` is usable as soon as the script has loaded.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let opts: any;
+    const ready = vi.fn(() => {
+      throw new Error(
+        "[Cloudflare Turnstile] Remove async/defer from the Turnstile api.js script tag before using turnstile.ready().",
+      );
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const widgetRender = vi.fn((_container: HTMLElement, options: any) => {
+      opts = options;
+      return "widget-1";
+    });
     const turnstile = {
-      ready: () => {
-        throw new Error(
-          "[Cloudflare Turnstile] Remove async/defer from the Turnstile api.js script tag before using turnstile.ready().",
-        );
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      render: (_container: HTMLElement, options: any) => {
-        opts = options;
-        return "widget-1";
-      },
+      ready,
+      render: widgetRender,
     };
 
     const onVerify = vi.fn();
     await render(Captcha, { onVerify, onReady: vi.fn() });
-    const script = await waitForProviderScript(scripts);
+    await vi.waitFor(() => expect(scripts).toHaveLength(1));
+    const script = scripts[0];
     expect(script.isConnected).toBe(false);
-    expect(turnstile.render).not.toHaveBeenCalled();
-    expect(turnstile.ready).not.toHaveBeenCalled();
+    expect(widgetRender).not.toHaveBeenCalled();
+    expect(ready).not.toHaveBeenCalled();
 
     // The SDK global becomes available as the detached script fixture settles,
     // matching the browser's real async-load ordering without attaching a URL.
@@ -215,8 +218,8 @@ describe("Captcha", () => {
 
     await vi.waitFor(() => expect(opts).toBeDefined());
     expect(opts.sitekey).toBe("site-key-123");
-    expect(turnstile.render).toHaveBeenCalledTimes(1);
-    expect(turnstile.ready).not.toHaveBeenCalled();
+    expect(widgetRender).toHaveBeenCalledTimes(1);
+    expect(ready).not.toHaveBeenCalled();
 
     opts.callback("solved-token");
     expect(onVerify).toHaveBeenLastCalledWith("solved-token");
