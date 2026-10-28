@@ -4,11 +4,34 @@ import SubscribeMenu from "./SubscribeMenu.svelte";
 
 const turnstileScript = "https://challenges.cloudflare.com/turnstile/v0/api.js";
 
-function markTurnstileLoaded() {
-  const script = document.createElement("script");
-  script.src = turnstileScript;
-  script.setAttribute("data-kener-script-loaded", "true");
-  document.head.appendChild(script);
+function interceptProviderScriptRequests() {
+  const scripts: HTMLScriptElement[] = [];
+  const appendChild = document.head.appendChild.bind(document.head);
+
+  vi.spyOn(document.head, "appendChild").mockImplementation((node) => {
+    if (node instanceof HTMLScriptElement && node.src === turnstileScript) {
+      scripts.push(node);
+      return node;
+    }
+
+    return appendChild(node);
+  });
+
+  return scripts;
+}
+
+async function finishTurnstileScriptLoad(scripts: HTMLScriptElement[], render: ReturnType<typeof vi.fn>) {
+  await vi.waitFor(() => expect(scripts.length === 1 || render.mock.calls.length > 0).toBe(true));
+  const script = scripts[0];
+  if (script) {
+    expect(script.isConnected).toBe(false);
+    script.dispatchEvent(new Event("load"));
+  }
+}
+
+function expectNoTurnstileRequests() {
+  const requests = performance.getEntriesByType("resource").map((entry) => entry.name);
+  expect(requests.some((request) => request.startsWith(turnstileScript))).toBe(false);
 }
 
 function mockFetchByUrl(handlers: Record<string, () => Promise<unknown>>) {
@@ -23,28 +46,32 @@ function mockFetchByUrl(handlers: Record<string, () => Promise<unknown>>) {
 describe("SubscribeMenu — captcha gating", () => {
   beforeEach(() => {
     localStorage.clear();
+    performance.clearResourceTimings();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     document.querySelectorAll(`script[src="${turnstileScript}"]`).forEach((script) => script.remove());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).turnstile;
   });
 
   it("disables Continue until the captcha reports a token when a provider is configured", async () => {
+    const scripts = interceptProviderScriptRequests();
+    const renderSpy = vi.fn(() => "widget-id");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).turnstile = { render: renderSpy };
     vi.stubGlobal(
       "fetch",
       mockFetchByUrl({ "captcha-config.json": async () => ({ provider: "turnstile", siteKey: "site-key-123" }) }),
     );
-    markTurnstileLoaded();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).turnstile = { render: vi.fn(() => "widget-id") };
-
     const screen = await render(SubscribeMenu, {});
     await screen.getByRole("button", { name: "Subscribe" }).click();
+    await finishTurnstileScriptLoad(scripts, renderSpy);
 
     await expect.element(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    expectNoTurnstileRequests();
   });
 
   it("leaves Continue enabled when no captcha provider is configured", async () => {
@@ -78,12 +105,12 @@ describe("SubscribeMenu — captcha gating", () => {
   });
 
   it("resets the captcha widget after a rejected token so the user can solve it again", async () => {
+    const scripts = interceptProviderScriptRequests();
     const resetSpy = vi.fn();
     const renderSpy = vi.fn((_container: HTMLElement, opts: { callback: (t: string) => void }) => {
       opts.callback("solved-token-1");
       return "widget-id-1";
     });
-    markTurnstileLoaded();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).turnstile = { render: renderSpy, reset: resetSpy };
 
@@ -100,6 +127,7 @@ describe("SubscribeMenu — captcha gating", () => {
 
     const screen = await render(SubscribeMenu, {});
     await screen.getByRole("button", { name: "Subscribe" }).click();
+    await finishTurnstileScriptLoad(scripts, renderSpy);
 
     const continueButton = screen.getByRole("button", { name: "Continue" });
     // Widget "solves" immediately per the renderSpy mock above.
@@ -109,16 +137,18 @@ describe("SubscribeMenu — captcha gating", () => {
     await continueButton.click();
 
     await vi.waitFor(() => expect(resetSpy).toHaveBeenCalledWith("widget-id-1"));
+    expectNoTurnstileRequests();
   });
 
   it("sends the user back to solve a fresh captcha on Resend instead of replaying the consumed token", async () => {
+    const scripts = interceptProviderScriptRequests();
     const renderSpy = vi.fn((_container: HTMLElement, opts: { callback: (t: string) => void }) => {
       opts.callback("solved-token-1");
       return "widget-id-1";
     });
-    markTurnstileLoaded();
+    const turnstile = { render: renderSpy, reset: vi.fn() };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).turnstile = { render: renderSpy, reset: vi.fn() };
+    (window as any).turnstile = turnstile;
 
     const loginCalls: unknown[] = [];
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
@@ -136,6 +166,7 @@ describe("SubscribeMenu — captcha gating", () => {
 
     const screen = await render(SubscribeMenu, {});
     await screen.getByRole("button", { name: "Subscribe" }).click();
+    await finishTurnstileScriptLoad(scripts, renderSpy);
 
     const continueButton = screen.getByRole("button", { name: "Continue" });
     await expect.element(continueButton).not.toBeDisabled();
@@ -152,5 +183,6 @@ describe("SubscribeMenu — captcha gating", () => {
     // replay the already-consumed token from the first submission.
     await expect.element(screen.getByLabelText("Email address")).toBeInTheDocument();
     expect(loginCalls.length).toBe(1);
+    expectNoTurnstileRequests();
   });
 });
