@@ -7,7 +7,7 @@ Group monitors aggregate member monitor status and latency into one monitor. By 
 
 ## Minimum setup {#minimum-setup}
 
-Requirements from current validation:
+Requirements in the dashboard editor:
 
 - at least **2** member monitors
 - members must be active, non-group monitors
