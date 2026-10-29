@@ -49,3 +49,6 @@ scratch/
 # Claude session-local state (ralph-loop etc.)
 .claude/*.local.md
 .vitest-attachments/
+
+# Local build and qualification output
+/artifacts/
