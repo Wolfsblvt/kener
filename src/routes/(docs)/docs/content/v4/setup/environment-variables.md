@@ -43,6 +43,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 > [!WARNING]
 > Kener has no fallback key. When `KENER_SECRET_KEY` is unset or empty, the sign-in page shows **Set up not completed**, and sign-in, password reset, and API keys stay off. Kener also logs a startup warning when the key is unset or is an example value from these docs, such as `replace_me_with_a_random_string`.
 
+Direct sign-in and signup submissions also refuse a missing signing key before processing the form or creating an owner account. Without a signing key, subscriber OTP verification, OIDC provisioning and profile/role synchronization, and invitation creation refuse before changing their stored state. Set the required configuration and retry; an attempt refused for missing configuration does not consume the OTP or reserve the first account.
+
 > [!IMPORTANT]
 > Changing `KENER_SECRET_KEY` signs everyone out and stops every existing API key. Create new API keys after the change.
 

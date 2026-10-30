@@ -1,6 +1,12 @@
 import db from "../db/db.js";
 import type { PaginationInput } from "$lib/types/common";
-import { GenerateToken, HashPassword, ValidatePassword, VerifyToken } from "./commonController.js";
+import {
+  GenerateToken,
+  HashPassword,
+  RequireAuthConfiguration,
+  ValidatePassword,
+  VerifyToken,
+} from "./commonController.js";
 import type { Cookies } from "@sveltejs/kit";
 import type { UserRecordPublic, UserRecordDashboard, RoleRecord } from "../types/db.js";
 import { GetAllSiteData } from "./controller.js";
@@ -306,6 +312,8 @@ export const GetTotalUserPages = async (limit: number): Promise<number> => {
 
 //send invitation email to user for account creation
 export const SendInvitationEmail = async (email: string, role_ids: string[], name: string) => {
+  RequireAuthConfiguration();
+
   if (!role_ids || role_ids.length === 0) {
     throw new Error("At least one role is required");
   }

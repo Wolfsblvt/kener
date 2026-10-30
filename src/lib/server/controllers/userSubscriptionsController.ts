@@ -369,7 +369,7 @@ export async function GetActiveEmailsForEventType(eventType: SubscriptionEventTy
 
 // ============ Public Subscription Functions ============
 
-import { GenerateTokenWithExpiry, VerifyToken } from "./commonController.js";
+import { GenerateTokenWithExpiry, RequireAuthConfiguration, VerifyToken } from "./commonController.js";
 import { GenerateRandomNumber, ValidateEmail, GetNowTimestampUTC } from "../tool.js";
 import sendEmail from "../notification/email_notification.js";
 import { GetAllSiteData } from "./controller.js";
@@ -494,6 +494,8 @@ export async function VerifySubscriberOTP(
   email: string,
   code: string,
 ): Promise<{ success: boolean; error?: string; token?: string }> {
+  RequireAuthConfiguration();
+
   if (!ValidateEmail(email)) {
     return { success: false, error: "Invalid email address" };
   }

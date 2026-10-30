@@ -1,12 +1,35 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import jwt from "jsonwebtoken";
-import { CreateHash, GenerateToken, SecretKeyWarning, VerifyToken } from "./commonController.js";
+import { createHmac } from "node:crypto";
+import {
+  CreateHash,
+  GenerateToken,
+  HasAuthConfiguration,
+  RequireAuthConfiguration,
+  SecretKeyWarning,
+  VerifyToken,
+} from "./commonController.js";
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
 describe("KENER_SECRET_KEY", () => {
+  it.each([undefined, ""])("refuses stateful authentication admission for a missing or empty key (%s)", (key) => {
+    vi.stubEnv("KENER_SECRET_KEY", key);
+    expect(HasAuthConfiguration()).toBe(false);
+    expect(() => RequireAuthConfiguration()).toThrow(/KENER_SECRET_KEY is not set/);
+  });
+
+  it("admits a configured key without changing existing API-key hashes", () => {
+    vi.stubEnv("KENER_SECRET_KEY", "synthetic-unchanged-key");
+    expect(HasAuthConfiguration()).toBe(true);
+    expect(() => RequireAuthConfiguration()).not.toThrow();
+    expect(CreateHash("synthetic-api-key")).toBe(
+      createHmac("sha256", "synthetic-unchanged-key").update("synthetic-api-key").digest("hex"),
+    );
+  });
+
   it("rejects a token signed with the old hardcoded fallback when the key is unset", async () => {
     vi.stubEnv("KENER_SECRET_KEY", undefined);
     const forged = jwt.sign({ id: 1, email: "admin@example.com" }, "DUMMY_SECRET");

@@ -6,7 +6,12 @@ import {
   GetUserPasswordHashById,
   CreateFirstUser,
 } from "$lib/server/controllers/userController";
-import { VerifyPassword, GenerateToken, CookieConfig } from "$lib/server/controllers/commonController";
+import {
+  VerifyPassword,
+  GenerateToken,
+  CookieConfig,
+  HasAuthConfiguration,
+} from "$lib/server/controllers/commonController";
 import { GetOidcSettings } from "$lib/server/controllers/oidcController";
 import serverResolve from "$lib/server/resolver.js";
 import GC from "$lib/global-constants";
@@ -53,6 +58,10 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 
 export const actions: Actions = {
   login: async ({ request, cookies }) => {
+    if (!HasAuthConfiguration()) {
+      return fail(503, { error: "Set up not completed", values: { email: "" } });
+    }
+
     const oidcSettings = await GetOidcSettings();
 
     const formData = await request.formData();
@@ -127,6 +136,10 @@ export const actions: Actions = {
     throw redirect(302, serverResolve("/manage/app/site-configurations"));
   },
   signup: async ({ request, cookies }) => {
+    if (!HasAuthConfiguration()) {
+      return fail(503, { error: "Set up not completed", values: { name: "", email: "" } });
+    }
+
     const formData = await request.formData();
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();

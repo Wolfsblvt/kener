@@ -44,6 +44,14 @@ const GetSecretKey = (): string => {
   return key;
 };
 
+/** Whether the signing configuration required by authentication is present. */
+export const HasAuthConfiguration = (): boolean => !!process.env.KENER_SECRET_KEY;
+
+/** Refuse stateful authentication before any durable authority is changed. */
+export const RequireAuthConfiguration = (): void => {
+  GetSecretKey();
+};
+
 export const ValidatePassword = (password: string): boolean => {
   return /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/.test(password);
 };

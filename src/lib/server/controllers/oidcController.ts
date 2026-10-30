@@ -8,7 +8,7 @@
 import * as client from "openid-client";
 import { GenerateRandomHexString } from "../tool.js";
 import db from "$lib/server/db/db";
-import { GenerateToken, CookieConfig } from "./commonController.js";
+import { GenerateToken, CookieConfig, RequireAuthConfiguration } from "./commonController.js";
 import type { OidcSettings } from "$lib/types/site.js";
 import type { UserRecordPublic } from "../types/db.js";
 import { GetSiteDataByKey } from "./siteDataController.js";
@@ -216,6 +216,8 @@ export async function FindOrCreateOidcUser(
     groups: string[];
   },
 ): Promise<UserRecordPublic> {
+  RequireAuthConfiguration();
+
   let user = await db.getUserByOidcSub(oidcData.sub);
 
   if (!user) {

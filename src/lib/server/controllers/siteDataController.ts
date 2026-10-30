@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { HasAuthConfiguration } from "./commonController.js";
 import { IsMaskedString, MaskString } from "../tool.js";
 import { siteDataKeys } from "./siteDataKeys.js";
 import { ClearOidcConfigCache } from "./oidcController.js";
@@ -216,7 +217,7 @@ export const GetSiteDataByKey = async (key: string): Promise<unknown> => {
 
 /** Checks the env vars required for setup, without touching the database. */
 export const HasRequiredEnv = (): boolean => {
-  return !!process.env.KENER_SECRET_KEY && process.env.ORIGIN !== undefined && process.env.REDIS_URL !== undefined;
+  return HasAuthConfiguration() && process.env.ORIGIN !== undefined && process.env.REDIS_URL !== undefined;
 };
 
 export const IsSetupComplete = async (): Promise<boolean> => {
