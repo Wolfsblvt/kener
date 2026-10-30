@@ -2,7 +2,7 @@
 
 ## Meaning
 
-This record carries the proposed upgrade from the accepted 4.1.9 fork to exact upstream 4.1.10, preserving the complete fork patch series and its authorship. It identifies the source comparison, authentication compatibility consequence and local synthetic qualification. It does not accept a release branch, move the default or mirror, publish an image, or establish any deployment's configuration or exposure.
+This record preserves the original proposal-era comparison, replay and qualification evidence for Kener 4.1.10, then records adoption of accepted source `23b18004177a3c60bd21f7e2cfef9546c8fe1152` as `wolf/v4.1.10`, the current upstream-main mirror, the GitHub default change and a fresh local Debian/docs-off image qualification. It keeps the authentication repair receipt and earlier image evidence bound to their exact cuts. It does not establish hosted CI, publication, deployed image state, real authentication configuration or operating adoption.
 
 ## Exact source and compatibility
 
@@ -35,7 +35,7 @@ The HTTP fixture uses native HTTP requests: a bounded echo-server comparison est
 
 The source archive used for the suite and image is SHA-256 `48f05fbeb3d8834336b983f3a2c45e4c5529c006ee4f94bf533a9105c1cd2fa1`. Runtime fixtures use an internal-only Docker network, synthetic keys and data, without published host ports or external provider access. The disposable image, containers, anonymous database/Redis volumes and networks are retired after qualification; build caches are not pruned. Build diagnostics remain evidence rather than a clean-diagnostics claim.
 
-This is source and synthetic packaged-runtime qualification. Hosted Actions remain disabled. Independent security review, release/default/mirror adoption, publication and real configured-runtime or operating consequences remain unperformed. The draft PR's 4.1.9 base is a comparison carrier: acceptance belongs on a new `wolf/v4.1.10` branch while retaining `wolf/v4.1.9`. GitHub's merge-base diff includes the replayed series; `git diff 4afd0866378fb57cc7415cbdac41e85edc6c1665 <proposal-head>` gives the effective upgrade delta, and the table below accounts for the upstream-to-proposal series.
+At the time this proposal qualification was recorded, hosted Actions were disabled, the separate release/default/mirror adoption remained unperformed, and draft PR6 was only a comparison carrier against `wolf/v4.1.9`. GitHub's merge-base diff includes the replayed series; `git diff 4afd0866378fb57cc7415cbdac41e85edc6c1665 <proposal-head>` gives the effective upgrade delta, and the table below accounts for the upstream-to-proposal series.
 
 ## Replay account
 
@@ -78,3 +78,13 @@ The following original and replayed commits retain their complete messages and m
 | `adbb254e5a75495941e1acfaac57a10985a8832f` | `9e7dc54e522dd791f8ff29d337d60225afa9c588` |
 | `5a1b5e545e1ecedf0880a7b96d08ff6e8b34a0fb` | `095961ebbeda9701a248f176325afaadb50c5347` |
 | `4afd0866378fb57cc7415cbdac41e85edc6c1665` | `1e263c49b6c6551b1520d05445a79ac20de020d7` |
+
+## Maintained release adoption
+
+On 2026-10-30 the accepted repair source `23b18004177a3c60bd21f7e2cfef9546c8fe1152` (tree `7c5eec14e0d50051b67ecc33e7a933f4cb44f17d`) was retained as `wolf/v4.1.10`, based on exact upstream tag object `d491d481423b9d51dd63a5e7cb652f976a9255a2`, peeling to `68a6ea236ced714b081f0cac7f1d86383f3ef427`. The already accepted authentication qualification receipt `e7035ac5b7aba729c520abb0cbe8f5ea403c6fcb23662f474631117d7e5586e4` binds this repaired source; its 779-test suite, per-engine state cases and compiled-runtime proof were reused without replay.
+
+A fresh local Debian/docs-off image was built from the repaired source as `kener-wolf:v4.1.10-wolf.2`, image ID `sha256:ae30e3ed910bea4acaecdf824c6636a0e70ddb27a98ba6a080fc79aaf28e0acb`. Its packaged runtime reached healthy state with disposable Redis on an internal-only network; `/healthcheck` returned `{"status":"ok","db":true,"redis":true}`. Build output contained circular-dependency warnings. The disposable containers, network and image were removed after the smoke; the build cache was retained. This smoke establishes packaged health only and does not repeat or extend authentication qualification.
+
+The `main` mirror now points to upstream `main` `dc9d9f118d8acb9bbd1e7f743f22d4b0fed90efe`, a descendant of the exact 4.1.10 release cut; it was advanced without rewriting history. GitHub's default branch is `wolf/v4.1.10`. The previous `wolf/v4.1.9` remains at `4afd0866378fb57cc7415cbdac41e85edc6c1665`. PR6 was manually closed without a GitHub merge after adoption readback. Its proposal branch was retired after the exact head became contained in `wolf/v4.1.10`. Hosted Actions are disabled. No package or image was published and no deployment was changed.
+
+Unobserved: real provider or email authentication, actual configured key state or strength, hosted CI, published image identity, deployed digest/configuration, and ordinary use of the full status/recovery product. Those remain outside this source-adoption result.

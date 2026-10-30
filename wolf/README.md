@@ -15,11 +15,11 @@ Everything else about Kener, including its own docs and agent instructions, is u
 
 The previous release branch stays reachable after an upgrade so the deployed image's source and rollback coordinate remain recoverable.
 
-## Patch series (proposal: upstream `4.1.10`; accepted release: `wolf/v4.1.9`)
+## Patch series (current release: upstream `4.1.10`, `wolf/v4.1.10`)
 
-The `chore/upgrade-kener-4-1-10` proposal replays the complete accepted series onto upstream `v4.1.10`. The maintained default remains `wolf/v4.1.9` until separate acceptance and release-branch adoption. See the [4.1.10 source qualification](qualification/upstream-4.1.10.md) for exact inputs, the replay account and compatibility consequences. Earlier qualification records remain evidence of their named 4.1.9 cuts.
+The `wolf/v4.1.10` release carries the complete accepted series on the exact upstream `v4.1.10` cut. GitHub's default points to this qualified release; `wolf/v4.1.9` remains reachable as the previous release coordinate. See the [4.1.10 source qualification](qualification/upstream-4.1.10.md) for exact inputs, the replay account, compatibility consequences and local image evidence. Earlier qualification records remain evidence of their named 4.1.9 cuts.
 
-The proposal also carries [authentication state admission](qualification/authentication-admission.md): missing signing configuration is refused before first-owner creation, subscriber activation, OIDC provisioning/synchronization or invitation writes. The upstream cryptographic refusal and configured-key behavior remain intact.
+The accepted patch series also carries [authentication state admission](qualification/authentication-admission.md): missing signing configuration is refused before first-owner creation, subscriber activation, OIDC provisioning/synchronization or invitation writes. The upstream cryptographic refusal and configured-key behavior remain intact.
 
 Replay these patches in order:
 
@@ -83,7 +83,7 @@ Use separate throwaway databases for native CLI migration/seed or write-parity r
 Build the image the same way upstream's plain release is built (Debian variant, docs off):
 
 ```sh
-docker build --build-arg VARIANT=debian --build-arg WITH_DOCS=false -t kener-wolf:v4.1.10-wolf.1 .
+docker build --build-arg VARIANT=debian --build-arg WITH_DOCS=false -t kener-wolf:v4.1.10-wolf.2 .
 ```
 
 Actions are disabled on this fork until Wolf authorizes a workflow. Publishing an image and changing a deployed digest belong to Wolf Ops' deployment route, not to this repository.
