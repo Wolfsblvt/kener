@@ -15,6 +15,7 @@ node_modules
 build
 dist
 .svelte-kit
+/artifacts
 .docs-excluded
 
 # Environment and secrets
