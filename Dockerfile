@@ -18,7 +18,9 @@
 #     kener
 # =============================================================================
 
-ARG NODE_VERSION=24
+# Wolfsblvt fork: select the qualified security patch for both builder and runtime.
+# Keep this exact version current deliberately; a floating major tag is not a runtime receipt.
+ARG NODE_VERSION=24.22.3
 ARG VARIANT=alpine
 ARG WITH_DOCS=false
 ARG KENER_BASE_PATH=

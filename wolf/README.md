@@ -65,6 +65,10 @@ To adopt a new identity version, update the pin's commit, run the pull, review t
 
 ## Verify and build
 
+The fork's Dockerfile defaults `NODE_VERSION` to the exact Node **24.22.3** security release, shared by the Alpine and Debian builder/runtime stages. This preserves Kener 4.1.9 and its patch series; it does not incorporate an independently proposed feature or change the application/database contract. The existing `NODE_VERSION` build override remains available for deliberate future qualification. Keep security-patch selection separate from upstream Kener upgrades.
+
+After a build, read the actual image's `node --version`, native dependency/application smoke results and immutable image ID; a versioned base tag or source edit alone does not prove the runtime loaded. Record the source commit, selected platform/base manifest, build arguments and resulting image identity together. An unpublished local image has no registry digest. Its accepted archive/hash and operating recovery/admission evidence belong to the release handoff. Source acceptance, image publication and replacement of either public/private deployment remain separate effects. Session-local `/artifacts/` is excluded from Git and the Docker context, including private qualification/delivery text.
+
 Kener 4.1.9 requires Node 24.14 or later. Without a matching local Node, run the suite in a container, keeping `node_modules` in a volume:
 
 ```sh
