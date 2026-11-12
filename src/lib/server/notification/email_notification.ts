@@ -71,7 +71,7 @@ export default async function send(
       throw new Error("No valid email configuration found. Please check your SMTP or Resend settings.");
     }
   } catch (error) {
-    console.error("Error sending email", error);
+    // The dispatch boundary retains a reduced outcome; provider errors can contain addresses or credentials.
     throw error;
   }
 }

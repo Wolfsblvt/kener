@@ -12,6 +12,7 @@ export function alertToVariables(
   alert: MonitorAlertV2Record,
   siteVars: SiteDataForNotification,
   monitorTag?: string,
+  monitorName?: string,
 ): AlertVariableMap {
   const createdAtDate = parseDbTimestamp(alert.created_at);
   const effectiveMonitorTag = monitorTag || config.monitor_tag || "unknown";
@@ -19,6 +20,13 @@ export function alertToVariables(
   return {
     alert_id: alert.id,
     alert_name: effectiveMonitorTag,
+    monitor_tag: effectiveMonitorTag,
+    monitor_name: monitorName || effectiveMonitorTag,
+    alert_started_at: createdAtDate.toISOString(),
+    alert_transition_at: parseDbTimestamp(
+      alert.alert_status === GC.RESOLVED ? alert.updated_at : alert.created_at,
+    ).toISOString(),
+    alert_transition: alert.alert_status === GC.RESOLVED ? "recovered" : "failing",
     alert_for: config.alert_for,
     alert_value: config.alert_value,
     alert_status: alert.alert_status,

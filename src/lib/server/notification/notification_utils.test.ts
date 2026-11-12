@@ -48,6 +48,31 @@ const HEADLINE = "Alert my-api for STATUS DOWN TRIGGERED at 2026-09-02T13:26:00.
 const raw = { escape: (text: string) => text };
 
 describe("alertToVariables", () => {
+  it("adds display name and distinct UTC start/recovery times without changing legacy variables", () => {
+    const recovered = {
+      ...alert,
+      alert_status: "RESOLVED",
+      updated_at: new Date("2026-09-02T14:00:00Z"),
+    } as MonitorAlertV2Record;
+    const vars = alertToVariables(config, recovered, site, "my-api", "Downloads");
+    expect(vars).toMatchObject({
+      monitor_name: "Downloads",
+      monitor_tag: "my-api",
+      alert_name: "my-api",
+      alert_timestamp: "2026-09-02T13:26:00.514Z",
+      alert_started_at: "2026-09-02T13:26:00.514Z",
+      alert_transition_at: "2026-09-02T14:00:00.000Z",
+      alert_transition: "recovered",
+      is_resolved: true,
+    });
+    expect(alertToVariables(config, alert, site, "my-api", "Downloads")).toMatchObject({
+      alert_transition: "failing",
+      alert_transition_at: "2026-09-02T13:26:00.514Z",
+      is_triggered: true,
+    });
+    expect(alertToVariables(config, alert, site, "my-api").monitor_name).toBe("my-api");
+  });
+
   it("alert_name is only the monitor tag (#830)", () => {
     expect(alertToVariables(config, alert, site, "my-api").alert_name).toBe("my-api");
   });

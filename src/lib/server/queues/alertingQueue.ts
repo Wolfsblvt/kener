@@ -14,7 +14,7 @@ import {
   IsUptimeLessThanXPercent,
   IsUptimeGreaterThanXPercent,
 } from "../controllers/controller.js";
-import type { MonitorSettings, MonitorAlertConfigRecord, MonitorAlertV2Record, TriggerMeta } from "../types/db.js";
+import type { MonitorSettings, MonitorAlertConfigRecord, MonitorAlertV2Record } from "../types/db.js";
 import { GetMonitorsParsed } from "../controllers/controller.js";
 import {
   AddIncidentToAlert,
@@ -29,11 +29,8 @@ import db from "../db/db.js";
 import { getUnixTime, differenceInSeconds } from "date-fns";
 import { parseDbTimestamp } from "../tool.js";
 import GC from "../../global-constants.js";
-import { alertToVariables, siteDataToVariables } from "../notification/notification_utils.js";
-import sendEmail from "../notification/email_notification.js";
-import sendWebhook from "$lib/server/notification/webhook_notification.js";
-import sendSlack from "$lib/server/notification/slack_notification.js";
-import sendDiscord from "$lib/server/notification/discord_notification.js";
+import { siteDataToVariables } from "../notification/notification_utils.js";
+import { sendAlertNotifications as dispatchAlertNotifications } from "../notification/alertNotifications.js";
 import { IsExplicitApiObservation, ReadObservationAlertState } from "../services/explicitObservation.js";
 import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 
@@ -124,55 +121,19 @@ async function sendAlertNotifications(
   monitor_alerts_configured: MonitorAlertConfigRecord,
   templateSiteVars: SiteDataForNotification,
   monitorTag?: string,
+  monitorName?: string,
 ): Promise<void> {
-  const templateAlertVars = alertToVariables(monitor_alerts_configured, activeAlert, templateSiteVars, monitorTag);
   const triggers = await GetTriggersByMonitorAlertConfigId(monitor_alerts_configured.id);
-
-  for (let i = 0; i < triggers.length; i++) {
-    const trigger = triggers[i];
-
-    // Fetch trigger template
-    const triggerMetaParsed = JSON.parse(trigger.trigger_meta) as TriggerMeta;
-    // Handle only email for now
-    if (trigger.trigger_type === "email") {
-      const toAddresses = triggerMetaParsed.to
-        .trim()
-        .split(",")
-        .map((addr) => addr.trim())
-        .filter((addr) => addr.length > 0);
-      if (toAddresses.length === 0) {
-        continue;
-      }
-      await sendEmail(
-        triggerMetaParsed.email_body,
-        triggerMetaParsed.email_subject,
-        { ...templateAlertVars, ...templateSiteVars },
-        toAddresses,
-        triggerMetaParsed.from,
-      );
-    } else if (trigger.trigger_type === "webhook") {
-      await sendWebhook(
-        triggerMetaParsed.webhook_body,
-        { ...templateAlertVars, ...templateSiteVars },
-        triggerMetaParsed.url,
-        JSON.stringify(triggerMetaParsed.headers),
-      );
-    } else if (trigger.trigger_type === "discord") {
-      await sendDiscord(
-        triggerMetaParsed.discord_body,
-        { ...templateAlertVars, ...templateSiteVars },
-        triggerMetaParsed.url,
-      );
-    } else if (trigger.trigger_type === "slack") {
-      await sendSlack(
-        triggerMetaParsed.slack_body,
-        { ...templateAlertVars, ...templateSiteVars },
-        triggerMetaParsed.url,
-      );
-    } else {
-      throw new Error("Unsupported trigger type for testing");
-    }
-  }
+  await dispatchAlertNotifications(
+    activeAlert,
+    monitor_alerts_configured,
+    templateSiteVars,
+    {
+      tag: monitorTag || monitor_alerts_configured.monitor_tag || "unknown",
+      name: monitorName || monitorTag || "unknown",
+    },
+    triggers,
+  );
 }
 
 const getQueue = () => {
@@ -261,7 +222,13 @@ const addWorker = () => {
             }
           }
           // Send triggered alert notifications
-          await sendAlertNotifications(activeAlert, monitor_alerts_configured, templateSiteVars, monitor_tag);
+          await sendAlertNotifications(
+            activeAlert,
+            monitor_alerts_configured,
+            templateSiteVars,
+            monitor_tag,
+            monitor_name,
+          );
         }
       } else {
         // Resolve any existing alert
@@ -298,11 +265,19 @@ const addWorker = () => {
           }
 
           // Send resolution notifications
-          await sendAlertNotifications(activeAlert, monitor_alerts_configured, templateSiteVars, monitor_tag);
+          await sendAlertNotifications(
+            activeAlert,
+            monitor_alerts_configured,
+            templateSiteVars,
+            monitor_tag,
+            monitor_name,
+          );
         }
       }
     } catch (error) {
-      console.error("Error processing alerting job:", error);
+      console.error("Error processing alerting job; inspect retained notification evidence", {
+        config_id: monitor_alerts_configured.id,
+      });
     }
 
     // return { monitor_tag, monitor_settings_json, ts, status };

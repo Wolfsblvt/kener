@@ -5,6 +5,8 @@ description: Configuration guide for all environment variables used in Kener, in
 
 Environment variables allow you to configure Kener without modifying code. They're essential for managing secrets, deployment settings, and runtime behavior.
 
+The Wolfsblvt fork additionally supports `KENER_NOTIFICATION_LOG_DIR` (default `./database/notification-outcomes`) for private, persisted monitor-alert send evidence. Keep this directory outside public/static paths and restrict it to the service account and authorized operators. Daily files retain up to 90 days with a 4 MiB daily cap; logging failures do not stop sends and leave outcomes unknown. The fork's `docs/LOGGING.md` documents access, retention limits and the supported per-event/transition/trigger CLI read.
+
 ## Required Variables {#required-variables}
 
 ### KENER_SECRET_KEY {#kener-secret-key}

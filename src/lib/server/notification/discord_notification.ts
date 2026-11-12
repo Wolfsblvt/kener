@@ -37,6 +37,7 @@ export default async function send(
     }
   }
 
+  let responseStatus: number | undefined;
   try {
     const response = await fetch(discordURL, {
       method: "POST",
@@ -44,16 +45,23 @@ export default async function send(
       body: renderedBody,
     });
 
+    responseStatus = response.status;
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Discord webhook request failed with status ${response.status}: ${errorText}`);
-      return { error: `Discord webhook request failed with status ${response.status}`, details: errorText };
+      return {
+        error: `Discord webhook request failed with status ${response.status}`,
+        status: response.status,
+        details: errorText,
+      };
     }
 
     const responseData = await response.text();
     return { success: true, status: response.status, data: responseData };
   } catch (error) {
-    console.error("Error sending Discord notification", error);
-    return { error: `Error sending Discord notification: ${describeError(error)}`, details: error };
+    return {
+      error: `Error sending Discord notification: ${describeError(error)}`,
+      status: responseStatus,
+      details: error,
+    };
   }
 }

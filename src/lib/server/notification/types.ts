@@ -3,6 +3,11 @@ import type { SubscriptionEventType } from "../db/dbimpl";
 export interface AlertVariableMap {
   alert_id: number;
   alert_name: string;
+  monitor_tag: string;
+  monitor_name: string;
+  alert_started_at: string;
+  alert_transition_at: string;
+  alert_transition: "failing" | "recovered";
   alert_for: string;
   alert_value: string;
   alert_status: string;

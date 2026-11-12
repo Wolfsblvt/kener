@@ -37,6 +37,7 @@ export default async function send(
     }
   }
 
+  let responseStatus: number | undefined;
   try {
     const response = await fetch(slackURL, {
       method: "POST",
@@ -44,16 +45,23 @@ export default async function send(
       body: renderedBody,
     });
 
+    responseStatus = response.status;
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Slack webhook request failed with status ${response.status}: ${errorText}`);
-      return { error: `Slack webhook request failed with status ${response.status}`, details: errorText };
+      return {
+        error: `Slack webhook request failed with status ${response.status}`,
+        status: response.status,
+        details: errorText,
+      };
     }
 
     const responseData = await response.text();
     return { success: true, status: response.status, data: responseData };
   } catch (error) {
-    console.error("Error sending Slack notification", error);
-    return { error: `Error sending Slack notification: ${describeError(error)}`, details: error };
+    return {
+      error: `Error sending Slack notification: ${describeError(error)}`,
+      status: responseStatus,
+      details: error,
+    };
   }
 }

@@ -45,7 +45,7 @@ export default async function send(
       }
     }
   } catch (e) {
-    console.log(e);
+    // The caller receives the result; raw configuration/parser errors must not enter logs.
   }
 
   // Render the webhook body with Mustache (disable HTML escaping for JSON/plain text)
@@ -60,6 +60,7 @@ export default async function send(
     }
   }
 
+  let responseStatus: number | undefined;
   try {
     const response = await fetch(webhookURL, {
       method: "POST",
@@ -67,16 +68,19 @@ export default async function send(
       body: renderedBody,
     });
 
+    responseStatus = response.status;
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Webhook request failed with status ${response.status}: ${errorText}`);
-      return { error: `Webhook request failed with status ${response.status}`, details: errorText };
+      return {
+        error: `Webhook request failed with status ${response.status}`,
+        status: response.status,
+        details: errorText,
+      };
     }
 
     const responseData = await response.text();
     return { success: true, status: response.status, data: responseData };
   } catch (error) {
-    console.error("Error sending webhook", error);
-    return { error: `Error sending webhook: ${describeError(error)}`, details: error };
+    return { error: `Error sending webhook: ${describeError(error)}`, status: responseStatus, details: error };
   }
 }

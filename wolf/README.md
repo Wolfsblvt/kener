@@ -37,6 +37,8 @@ Inline expansion reuses upstream's member rendering. Explicit API observations r
 
 The [coherent status qualification](qualification/coherent-status.md) records the combined presentation, preserving association/retirement, native observation and fixture corrections. A coherent source candidate is distinct from release-branch acceptance, a built image or adoption by any deployment.
 
+The notification-outcome candidate adds display-name, tag and UTC event/transition variables to the native alert worker, retaining legacy templates and one trigger/recovery send per event. Reduced private daily files distinguish HTTP/mail acknowledgement, rejection, uncertainty and explicit skipped dispatch; `notification/read.mjs` reads them by alert/transition/trigger. The sender, queue, template-help and documentation changes form one patch. [Logging and operator read](../docs/LOGGING.md) defines retention/access and provider limits. This source candidate does not imply release-branch acceptance, an image, stored-template adoption or human receipt.
+
 ## Upgrade an upstream release
 
 1. Resolve the exact upstream release or security-fix commit and update the untouched `main` mirror.
