@@ -105,8 +105,13 @@ RUN mkdir -p /docs-runtime && \
       cp -r "src/routes/(docs)/docs/content" "/docs-runtime/src/routes/(docs)/docs/"; \
     fi
 
-# 8. Remove devDependencies from node_modules
-RUN npm prune --omit=dev
+# 8. Install a clean production tree instead of renaming/removing the builder's
+#    lower-layer dependency directories (which can stall under overlayfs).
+FROM builder-${VARIANT} AS production-dependencies
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev --no-fund && \
+    npm cache clean --force
 
 # =============================================================================
 #  STAGE 2 — PRODUCTION  (minimal runtime image)
@@ -158,7 +163,7 @@ RUN mkdir -p database && \
 # ---- Copy artifacts from builder (order: least → most likely to change) ----
 
 # Production node_modules (largest layer, changes least often)
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=production-dependencies /app/node_modules ./node_modules
 
 # Package manifest (needed for ESM "type":"module" resolution)
 COPY --chown=node:node --from=builder /app/package.json ./package.json
