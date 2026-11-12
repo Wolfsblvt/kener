@@ -30,7 +30,10 @@ import { getUnixTime, differenceInSeconds } from "date-fns";
 import { parseDbTimestamp } from "../tool.js";
 import GC from "../../global-constants.js";
 import { siteDataToVariables } from "../notification/notification_utils.js";
-import { sendAlertNotifications as dispatchAlertNotifications } from "../notification/alertNotifications.js";
+import {
+  NotificationDispatchError,
+  sendAlertNotifications as dispatchAlertNotifications,
+} from "../notification/alertNotifications.js";
 import { IsExplicitApiObservation, ReadObservationAlertState } from "../services/explicitObservation.js";
 import { GetMinuteStartNowTimestampUTC } from "../tool.js";
 
@@ -275,9 +278,11 @@ const addWorker = () => {
         }
       }
     } catch (error) {
-      console.error("Error processing alerting job; inspect retained notification evidence", {
-        config_id: monitor_alerts_configured.id,
-      });
+      if (error instanceof NotificationDispatchError) {
+        console.error(error.message, { config_id: monitor_alerts_configured.id });
+      } else {
+        console.error("Error processing alerting job", error);
+      }
     }
 
     // return { monitor_tag, monitor_settings_json, ts, status };

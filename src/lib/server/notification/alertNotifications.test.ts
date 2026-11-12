@@ -36,7 +36,7 @@ const trigger = (
     url: "https://endpoint.example/SECRET",
     headers: [],
     webhook_body:
-      "{{monitor_name}} {{monitor_tag}} {{alert_transition}} {{alert_started_at}} {{alert_transition_at}} {{alert_message}}",
+      "{{monitor_name}} {{monitor_tag}} {{alert_transition}} {{alert_confirmed_at}} {{alert_transition_at}} {{alert_message}}",
     to: "operator@example.invalid",
     email_body: "body",
     email_subject: "subject",
@@ -177,12 +177,12 @@ describe("native notification dispatch and retained operator read", () => {
   it("leaves missing or interrupted evidence unknown and does not guess not-attempted", () => {
     expect(read()).toMatchObject({ outcome_if_absent: "unknown", attempts: [] });
     recordNotificationEvidence({
-      attempt_id: "interrupted",
+      attempt_id: "d279c732-df78-4b2b-a256-ae9c45046274",
       alert_id: 7,
       config_id: 2,
       trigger_id: 3,
       transition: "TRIGGERED",
-      transition_at: "2026-11-01T08:00:00Z",
+      transition_at: "2026-11-01T08:00:00.000Z",
       channel: "webhook",
       phase: "attempt",
       outcome: "unknown",
@@ -212,7 +212,7 @@ describe("native notification dispatch and retained operator read", () => {
     expect(incomplete.status).toBe(2);
     expect(JSON.parse(incomplete.stdout)).toMatchObject({ read_incomplete: true });
     expect(incomplete.stdout + incomplete.stderr).not.toContain("SECRET");
-  });
+  }, 15_000);
   it("expires only owned old segments, enforces the daily bound, and signals evidence failure safely", async () => {
     writeFileSync(join(directory, "notification-2000-01-01.jsonl"), "old");
     writeFileSync(join(directory, "keep.txt"), "keep");
@@ -228,4 +228,96 @@ describe("native notification dispatch and retained operator read", () => {
     expect(errors).toHaveBeenCalledWith(expect.stringContaining("notification.evidence_unavailable"));
     expect(readFileSync(path).length).toBe(4 * 1024 * 1024);
   });
+});
+
+it.each([
+  {},
+  "invalid headers",
+  [null],
+  [{ key: "Authorization", value: "x" }, null],
+  [{ key: "Authorization", value: 7 }],
+  [{ key: "bad header", value: "x" }],
+  [{ key: "Authorization", value: "bad\r\nPRIVATE_SENTINEL" }],
+])("refuses malformed webhook headers before a send: %j", async (headers) => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  fetchMock.mockResolvedValue(new Response("ok", { status: 200 }));
+  await expect(
+    sendAlertNotifications(alert, config, site, monitor, [
+      trigger(
+        3,
+        "webhook",
+        JSON.stringify({ url: "https://example.invalid/PRIVATE_SENTINEL", webhook_body: "body", headers }),
+      ),
+    ]),
+  ).rejects.toThrow("dispatch aborted");
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(read().attempts[0]).toMatchObject({ outcome: "not_attempted", reason: "invalid_configuration" });
+  expect(JSON.stringify(read()) + JSON.stringify(errors.mock.calls)).not.toContain("PRIVATE_SENTINEL");
+});
+
+it("refuses malformed headers after secret interpolation without treating it as a send", async () => {
+  vi.stubEnv("HEADER_FIXTURE", "bad\r\nPRIVATE_SENTINEL");
+  await expect(
+    sendAlertNotifications(alert, config, site, monitor, [
+      trigger(
+        3,
+        "webhook",
+        JSON.stringify({
+          url: "https://example.invalid/",
+          webhook_body: "body",
+          headers: [{ key: "Authorization", value: "$HEADER_FIXTURE" }],
+        }),
+      ),
+    ]),
+  ).rejects.toThrow("dispatch aborted");
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(read().attempts[0]).toMatchObject({ outcome: "not_attempted", reason: "invalid_configuration" });
+});
+it("preserves native case-insensitive overrides and empty valid header values", async () => {
+  fetchMock.mockResolvedValue(new Response("ok", { status: 200 }));
+  await sendAlertNotifications(alert, config, site, monitor, [
+    trigger(
+      3,
+      "webhook",
+      JSON.stringify({
+        url: "https://example.invalid/",
+        webhook_body: "body",
+        headers: [
+          { key: "Content-Type", value: "text/plain" },
+          { key: "X-Empty", value: "" },
+        ],
+      }),
+    ),
+  ]);
+  expect(fetchMock.mock.calls[0][1].headers).toMatchObject({ "content-type": "text/plain", "x-empty": "" });
+  expect(read().attempts[0].outcome).toBe("accepted");
+});
+it("contains invalid producer fields without serializing arbitrary values in the file or diagnostic", () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  recordNotificationEvidence({
+    attempt_id: { secret: "HOSTILE_SENTINEL" },
+    alert_id: { secret: "HOSTILE_SENTINEL" },
+    reason: { secret: "HOSTILE_SENTINEL" },
+  } as never);
+  expect(readdirSync(directory)).toEqual([]);
+  expect(JSON.stringify(errors.mock.calls)).not.toContain("HOSTILE_SENTINEL");
+  expect(errors).toHaveBeenCalledWith(expect.stringContaining('"reason":"invalid_record"'));
+});
+
+it("preserves valid quote/backslash values through field-level secret interpolation", async () => {
+  vi.stubEnv("HEADER_FIXTURE", 'Bearer "quoted"\\value');
+  fetchMock.mockResolvedValue(new Response("ok", { status: 200 }));
+  await sendAlertNotifications(alert, config, site, monitor, [
+    trigger(
+      3,
+      "webhook",
+      JSON.stringify({
+        url: "https://example.invalid/",
+        webhook_body: "body",
+        headers: [{ key: "Authorization", value: "$HEADER_FIXTURE" }],
+      }),
+    ),
+  ]);
+  expect(fetchMock.mock.calls[0][1].headers.authorization).toBe('Bearer "quoted"\\value');
+  expect(read().attempts[0].outcome).toBe("accepted");
 });

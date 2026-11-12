@@ -8,6 +8,8 @@ const state = vi.hoisted(() => ({
   process: undefined as undefined | ((job: { data: unknown }) => Promise<unknown>),
   active: null as null | { id: number; config_id: number; alert_status: string; created_at: Date; updated_at: Date },
   status: "DOWN",
+  lookupError: null as Error | null,
+  triggerMeta: null as string | null,
   created: 0,
   resolved: 0,
 }));
@@ -21,7 +23,12 @@ vi.mock("./q.js", () => ({
   },
 }));
 vi.mock("../db/db.js", () => ({
-  default: { consecutivelyStatusFor: async (_tag: string, value: string) => value === state.status },
+  default: {
+    consecutivelyStatusFor: async (_tag: string, value: string) => {
+      if (state.lookupError) throw state.lookupError;
+      return value === state.status;
+    },
+  },
 }));
 vi.mock("../controllers/controller.js", () => ({
   GetAllSiteData: async () => ({ siteURL: "https://status.example/", siteName: "Status", logo: "", colors: {} }),
@@ -63,11 +70,13 @@ vi.mock("../controllers/monitorAlertConfigController.js", () => ({
     {
       id: 3,
       trigger_type: "webhook",
-      trigger_meta: JSON.stringify({
-        url: "https://provider.example/",
-        headers: [],
-        webhook_body: "{{monitor_name}} {{alert_transition}} {{alert_transition_at}}",
-      }),
+      trigger_meta:
+        state.triggerMeta ||
+        JSON.stringify({
+          url: "https://provider.example/",
+          headers: [],
+          webhook_body: "{{monitor_name}} {{alert_transition}} {{alert_transition_at}}",
+        }),
     },
   ],
 }));
@@ -108,4 +117,36 @@ it("keeps one send per new episode and one recovery; failed submission is not a 
     outcome: "accepted",
     transition_at: "2026-11-01T09:00:00.000Z",
   });
+});
+
+it("preserves useful non-notification failure diagnostics", async () => {
+  const error = new Error("database diagnostic sentinel");
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  state.lookupError = error;
+  state.status = "DOWN";
+  try {
+    await queue.push("downloads", 5, "DOWN");
+    expect(log).toHaveBeenCalledWith("Error processing alerting job", error);
+  } finally {
+    state.lookupError = null;
+    log.mockRestore();
+  }
+});
+it("contains raw notification configuration failures at the queue boundary", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  state.triggerMeta = "PRIVATE_PROVIDER_SENTINEL";
+  state.status = "DOWN";
+  try {
+    await queue.push("downloads", 6, "DOWN");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(JSON.stringify(log.mock.calls)).not.toContain("PRIVATE_PROVIDER_SENTINEL");
+    expect(log).toHaveBeenCalledWith("Alert notification dispatch aborted; inspect retained notification evidence", {
+      config_id: 2,
+    });
+  } finally {
+    state.triggerMeta = null;
+    log.mockRestore();
+  }
 });

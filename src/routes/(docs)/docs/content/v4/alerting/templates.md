@@ -7,40 +7,46 @@ Templates define the body and subject sent by triggers. Kener uses Mustache rend
 
 ## Canonical alert variables {#canonical-alert-variables}
 
-| Variable                      |
-| :---------------------------- |
-| `{{alert_id}}`                |
-| `{{alert_name}}`              |
-| `{{monitor_name}}`            |
-| `{{monitor_tag}}`             |
-| `{{alert_started_at}}`        |
-| `{{alert_transition_at}}`     |
-| `{{alert_transition}}`        |
-| `{{alert_for}}`               |
-| `{{alert_value}}`             |
-| `{{alert_status}}`            |
-| `{{alert_severity}}`          |
-| `{{alert_message}}`           |
-| `{{alert_source}}`            |
-| `{{alert_timestamp}}`         |
-| `{{alert_cta_url}}`           |
-| `{{alert_cta_text}}`          |
-| `{{alert_incident_id}}`       |
-| `{{alert_incident_url}}`      |
-| `{{alert_failure_threshold}}` |
-| `{{alert_success_threshold}}` |
-| `{{is_resolved}}`             |
-| `{{is_triggered}}`            |
+| Variable                         |
+| :------------------------------- |
+| `{{alert_id}}`                   |
+| `{{alert_name}}`                 |
+| `{{monitor_name}}`               |
+| `{{monitor_tag}}`                |
+| `{{alert_started_at}}`           |
+| `{{alert_started_at_available}}` |
+| `{{alert_confirmed_at}}`         |
+| `{{alert_transition_at}}`        |
+| `{{alert_transition}}`           |
+| `{{alert_for}}`                  |
+| `{{alert_value}}`                |
+| `{{alert_status}}`               |
+| `{{alert_severity}}`             |
+| `{{alert_message}}`              |
+| `{{alert_source}}`               |
+| `{{alert_timestamp}}`            |
+| `{{alert_cta_url}}`              |
+| `{{alert_cta_text}}`             |
+| `{{alert_incident_id}}`          |
+| `{{alert_incident_url}}`         |
+| `{{alert_failure_threshold}}`    |
+| `{{alert_success_threshold}}`    |
+| `{{is_resolved}}`                |
+| `{{is_triggered}}`               |
 
 `{{alert_name}}` is the tag of the monitor the alert fired for. The shipped templates build their headline as `Alert {{alert_name}} for {{alert_for}} {{alert_value}} {{alert_status}} at {{alert_timestamp}}`. Any trigger created before this change whose stored template still uses a bare `{{alert_name}}` as a headline now shows only the tag there. The old defaults did this in four places: the email subject, the email heading, the Discord embed title, and the Slack section text. Paste the headline string wherever you want the full headline back.
 
-The Wolfsblvt fork also supplies `monitor_name` (the monitor's display name, with tag fallback), `monitor_tag` (the correlation tag), and `alert_transition` (`failing` or `recovered`). `alert_started_at` is the event creation time; `alert_transition_at` is creation time for a trigger and resolution time for recovery. Both are ISO 8601 UTC. The legacy `alert_timestamp` remains the creation time even on recovery. These are alert-confirmation times, not the first failed sample or proof of when a person received a message.
+The Wolfsblvt fork supplies `monitor_name` (display name with tag fallback), `monitor_tag` (correlation tag), and `alert_transition` (`failing` or `recovered`). `alert_confirmed_at` is when the alert was created after its configured threshold. `alert_transition_at` is confirmation time for a trigger and resolution time for recovery. Both are ISO 8601 UTC. The legacy `alert_timestamp` remains creation time even on recovery.
+
+The alert record does not retain the first failed observation: `alert_started_at` is empty and `alert_started_at_available` is false. Do not label confirmation as incident start. Actual first-failure timing remains unavailable in this source; neither timestamp proves message receipt.
 
 For a readable custom message:
 
 ```text
 {{monitor_name}} — {{alert_transition}}
-Incident started: {{alert_started_at}}
+{{#alert_started_at_available}}First failed observation: {{alert_started_at}}{{/alert_started_at_available}}
+{{^alert_started_at_available}}First failed observation: unavailable{{/alert_started_at_available}}
+Alert confirmed: {{alert_confirmed_at}}
 Transition: {{alert_transition_at}}
 {{#is_triggered}}Impact: {{alert_message}}{{/is_triggered}}
 {{#is_resolved}}The configured recovery condition is satisfied.{{/is_resolved}}

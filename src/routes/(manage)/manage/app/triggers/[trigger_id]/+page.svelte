@@ -397,11 +397,12 @@
             </div>
             <p class="text-muted-foreground text-xs">
               Use Mustache variables like <code class="bg-muted rounded px-1">{"{{variable}}"}</code>. Available:
-              alert_id, alert_name, monitor_name, monitor_tag, alert_started_at, alert_transition_at, alert_transition,
-              alert_for, alert_value, alert_status, alert_severity, alert_message, alert_source, alert_timestamp,
-              alert_cta_url, alert_cta_text, alert_incident_id, alert_incident_url, alert_failure_threshold,
-              alert_success_threshold, is_resolved, is_triggered, site_url, site_name, site_logo_url, colors_up,
-              colors_down, colors_degraded, colors_maintenance
+              alert_id, alert_name, monitor_name, monitor_tag, alert_started_at, alert_started_at_available,
+              alert_confirmed_at, alert_transition_at, alert_transition, alert_for, alert_value, alert_status,
+              alert_severity, alert_message, alert_source, alert_timestamp, alert_cta_url, alert_cta_text,
+              alert_incident_id, alert_incident_url, alert_failure_threshold, alert_success_threshold, is_resolved,
+              is_triggered, site_url, site_name, site_logo_url, colors_up, colors_down, colors_degraded,
+              colors_maintenance
             </p>
             <div class="overflow-hidden rounded-md border">
               <Textarea bind:value={trigger.trigger_meta.webhook_body} />
@@ -418,10 +419,11 @@
             </div>
             <p class="text-muted-foreground text-xs">
               Use Mustache variables. Available: alert_id, alert_name, monitor_name, monitor_tag, alert_started_at,
-              alert_transition_at, alert_transition, alert_for, alert_value, alert_status, alert_severity,
-              alert_message, alert_source, alert_timestamp, alert_cta_url, alert_cta_text, alert_incident_id,
-              alert_incident_url, alert_failure_threshold, alert_success_threshold, is_resolved, is_triggered, site_url,
-              site_name, site_logo_url, colors_up, colors_down, colors_degraded, colors_maintenance
+              alert_started_at_available, alert_confirmed_at, alert_transition_at, alert_transition, alert_for,
+              alert_value, alert_status, alert_severity, alert_message, alert_source, alert_timestamp, alert_cta_url,
+              alert_cta_text, alert_incident_id, alert_incident_url, alert_failure_threshold, alert_success_threshold,
+              is_resolved, is_triggered, site_url, site_name, site_logo_url, colors_up, colors_down, colors_degraded,
+              colors_maintenance
             </p>
             <div class="overflow-hidden rounded-md border">
               <Textarea bind:value={trigger.trigger_meta.discord_body} />
@@ -438,10 +440,11 @@
             </div>
             <p class="text-muted-foreground text-xs">
               Use Mustache variables. Available: alert_id, alert_name, monitor_name, monitor_tag, alert_started_at,
-              alert_transition_at, alert_transition, alert_for, alert_value, alert_status, alert_severity,
-              alert_message, alert_source, alert_timestamp, alert_cta_url, alert_cta_text, alert_incident_id,
-              alert_incident_url, alert_failure_threshold, alert_success_threshold, is_resolved, is_triggered, site_url,
-              site_name, site_logo_url, colors_up, colors_down, colors_degraded, colors_maintenance
+              alert_started_at_available, alert_confirmed_at, alert_transition_at, alert_transition, alert_for,
+              alert_value, alert_status, alert_severity, alert_message, alert_source, alert_timestamp, alert_cta_url,
+              alert_cta_text, alert_incident_id, alert_incident_url, alert_failure_threshold, alert_success_threshold,
+              is_resolved, is_triggered, site_url, site_name, site_logo_url, colors_up, colors_down, colors_degraded,
+              colors_maintenance
             </p>
             <div class="overflow-hidden rounded-md border">
               <Textarea bind:value={trigger.trigger_meta.slack_body} />
@@ -492,10 +495,11 @@
             </div>
             <p class="text-muted-foreground text-xs">
               Use Mustache variables. Available: alert_id, alert_name, monitor_name, monitor_tag, alert_started_at,
-              alert_transition_at, alert_transition, alert_for, alert_value, alert_status, alert_severity,
-              alert_message, alert_source, alert_timestamp, alert_cta_url, alert_cta_text, alert_incident_id,
-              alert_incident_url, alert_failure_threshold, alert_success_threshold, is_resolved, is_triggered, site_url,
-              site_name, site_logo_url, colors_up, colors_down, colors_degraded, colors_maintenance
+              alert_started_at_available, alert_confirmed_at, alert_transition_at, alert_transition, alert_for,
+              alert_value, alert_status, alert_severity, alert_message, alert_source, alert_timestamp, alert_cta_url,
+              alert_cta_text, alert_incident_id, alert_incident_url, alert_failure_threshold, alert_success_threshold,
+              is_resolved, is_triggered, site_url, site_name, site_logo_url, colors_up, colors_down, colors_degraded,
+              colors_maintenance
             </p>
             <div class="overflow-hidden rounded-md border">
               <CodeMirror

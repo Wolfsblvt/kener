@@ -1,9 +1,43 @@
 import type { WebhookTemplateJson } from "../types/db";
 import { describeError } from "./notification_utils.js";
-import { GetRequiredSecrets, ReplaceAllOccurrences } from "../tool.js";
+import { ApplySecretsToHeaders, GetRequiredSecrets, ReplaceAllOccurrences } from "../tool.js";
 import Mustache from "mustache";
 import type { SiteDataForNotification, TemplateVariableMap } from "./types.js";
 import version from "../../version.js";
+
+/** Configuration refused before HTTP submission, without retaining raw header/parser values. */
+export class InvalidWebhookHeadersError extends Error {
+  constructor() {
+    super("Invalid webhook headers");
+    this.name = "InvalidWebhookHeadersError";
+  }
+}
+
+/** Parse the stored header array and validate HTTP names/values through the native Headers contract. */
+export function parseWebhookHeaders(
+  headers?: string,
+  secrets: Array<{ find: string; replace: string | undefined }> = [],
+): Record<string, string> {
+  try {
+    const parsed = headers ? JSON.parse(headers) : [];
+    if (!Array.isArray(parsed)) throw new InvalidWebhookHeadersError();
+    const result = new Headers({
+      "user-agent": `Kener/${version()}`,
+      accept: "application/json",
+      "content-type": "application/json",
+    });
+    for (const header of parsed) {
+      if (!header || typeof header.key !== "string" || !header.key || typeof header.value !== "string")
+        throw new InvalidWebhookHeadersError();
+    }
+    // Use the existing field-level substitution path: quotes/backslashes in valid
+    // credential values must not corrupt serialized header JSON.
+    for (const [key, value] of Object.entries(ApplySecretsToHeaders(parsed, secrets))) result.set(key, value);
+    return Object.fromEntries(result.entries());
+  } catch {
+    throw new InvalidWebhookHeadersError();
+  }
+}
 
 export default async function send(
   webhookBody: string,
@@ -19,46 +53,14 @@ export default async function send(
     if (secret.replace !== undefined) {
       webhookBody = ReplaceAllOccurrences(webhookBody, secret.find, secret.replace);
       webhookURL = ReplaceAllOccurrences(webhookURL, secret.find, secret.replace);
-      if (headers) {
-        headers = ReplaceAllOccurrences(headers, secret.find, secret.replace);
-      }
     }
   }
 
-  const defaultHeaders = [
-    { key: "user-agent", value: `Kener/${version()}` },
-    { key: "accept", value: "application/json" },
-    { key: "content-type", value: "application/json" },
-  ];
-
-  try {
-    if (headers) {
-      const parsedHeaders: Array<{ key: string; value: string }> = JSON.parse(headers);
-      for (const header of parsedHeaders) {
-        //if key exist in defaultHeaders, replace the value
-        const existingHeader = defaultHeaders.find((h) => h.key.toLowerCase() === header.key.toLowerCase());
-        if (existingHeader) {
-          existingHeader.value = header.value;
-        } else {
-          defaultHeaders.push(header);
-        }
-      }
-    }
-  } catch (e) {
-    // The caller receives the result; raw configuration/parser errors must not enter logs.
-  }
+  // Validate again after secret interpolation: an interpolated invalid value must also refuse before fetch.
+  const headersObj = parseWebhookHeaders(headers, envSecrets);
 
   // Render the webhook body with Mustache (disable HTML escaping for JSON/plain text)
   const renderedBody = Mustache.render(webhookBody, { ...variables }, {}, { escape: (text) => text });
-
-  // Build headers object
-  const headersObj: Record<string, string> = {};
-
-  for (const header of defaultHeaders) {
-    if (header.key && header.value) {
-      headersObj[header.key] = header.value;
-    }
-  }
 
   let responseStatus: number | undefined;
   try {

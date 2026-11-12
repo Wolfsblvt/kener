@@ -22,7 +22,10 @@ export function alertToVariables(
     alert_name: effectiveMonitorTag,
     monitor_tag: effectiveMonitorTag,
     monitor_name: monitorName || effectiveMonitorTag,
-    alert_started_at: createdAtDate.toISOString(),
+    // An alert is created after confirmation. Its record does not retain the first failing observation.
+    alert_started_at: "",
+    alert_started_at_available: false,
+    alert_confirmed_at: createdAtDate.toISOString(),
     alert_transition_at: parseDbTimestamp(
       alert.alert_status === GC.RESOLVED ? alert.updated_at : alert.created_at,
     ).toISOString(),

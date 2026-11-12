@@ -48,7 +48,7 @@ const HEADLINE = "Alert my-api for STATUS DOWN TRIGGERED at 2026-09-02T13:26:00.
 const raw = { escape: (text: string) => text };
 
 describe("alertToVariables", () => {
-  it("adds display name and distinct UTC start/recovery times without changing legacy variables", () => {
+  it("adds display name and distinct UTC confirmation/recovery times without changing legacy variables", () => {
     const recovered = {
       ...alert,
       alert_status: "RESOLVED",
@@ -60,7 +60,9 @@ describe("alertToVariables", () => {
       monitor_tag: "my-api",
       alert_name: "my-api",
       alert_timestamp: "2026-09-02T13:26:00.514Z",
-      alert_started_at: "2026-09-02T13:26:00.514Z",
+      alert_started_at: "",
+      alert_started_at_available: false,
+      alert_confirmed_at: "2026-09-02T13:26:00.514Z",
       alert_transition_at: "2026-09-02T14:00:00.000Z",
       alert_transition: "recovered",
       is_resolved: true,
@@ -132,5 +134,14 @@ describe("maintenanceToVariables", () => {
     expect(maintenanceToVariables(event, "api", "has started", "start", "Maintenance Started").is_maintenance).toBe(
       true,
     );
+  });
+});
+
+it("does not substitute threshold confirmation for an unavailable first failed observation", () => {
+  const vars = alertToVariables({ ...config, failure_threshold: 3 }, alert, site, "downloads", "Downloads");
+  expect(vars).toMatchObject({
+    alert_started_at: "",
+    alert_started_at_available: false,
+    alert_confirmed_at: "2026-09-02T13:26:00.514Z",
   });
 });

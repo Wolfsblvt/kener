@@ -6,6 +6,8 @@ export interface AlertVariableMap {
   monitor_tag: string;
   monitor_name: string;
   alert_started_at: string;
+  alert_started_at_available: boolean;
+  alert_confirmed_at: string;
   alert_transition_at: string;
   alert_transition: "failing" | "recovered";
   alert_for: string;

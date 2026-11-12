@@ -3,10 +3,18 @@ import type { MonitorAlertConfigRecord, MonitorAlertV2Record, TriggerMeta, Trigg
 import type { SiteDataForNotification } from "./types.js";
 import { alertToVariables } from "./notification_utils.js";
 import sendEmail from "./email_notification.js";
-import sendWebhook from "./webhook_notification.js";
+import sendWebhook, { InvalidWebhookHeadersError, parseWebhookHeaders } from "./webhook_notification.js";
 import sendSlack from "./slack_notification.js";
 import sendDiscord from "./discord_notification.js";
 import { recordNotificationEvidence, type NotificationEvidence } from "./notificationEvidence.js";
+
+/** Reduced notification boundary error; provider/configuration exceptions never escape as its cause. */
+export class NotificationDispatchError extends Error {
+  constructor() {
+    super("Alert notification dispatch aborted; inspect retained notification evidence");
+    this.name = "NotificationDispatchError";
+  }
+}
 
 type ResultEvidence = Pick<NotificationEvidence, "outcome" | "reason" | "http_status">;
 
@@ -90,6 +98,7 @@ export async function sendAlertNotifications(
         recordNotificationEvidence({ ...evidence, reason: "no_recipients" });
         continue;
       }
+      if (channel === "webhook") parseWebhookHeaders(JSON.stringify(meta.headers));
       recordNotificationEvidence({ ...evidence, phase: "attempt", outcome: "unknown", reason: "pending" });
       started = true;
       let result: unknown;
@@ -104,16 +113,17 @@ export async function sendAlertNotifications(
         ...classifyResult(channel, result),
         duration_ms: Math.round(performance.now() - start),
       });
-    } catch {
+    } catch (error) {
+      const invalidHeaders = error instanceof InvalidWebhookHeadersError;
       recordNotificationEvidence({
         ...evidence,
-        outcome: started ? "unknown" : "not_attempted",
-        reason: started ? "send_exception" : evidence.reason,
+        outcome: started && !invalidHeaders ? "unknown" : "not_attempted",
+        reason: invalidHeaders ? "invalid_configuration" : started ? "send_exception" : evidence.reason,
         duration_ms: Math.round(performance.now() - start),
       });
       aborted = true;
     }
   }
   // Upstream aborts remaining triggers on a thrown send; keep that behavior without exposing its raw error.
-  if (aborted) throw new Error("Alert notification dispatch aborted; inspect retained notification evidence");
+  if (aborted) throw new NotificationDispatchError();
 }

@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, lstatSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseNotificationEvidence } from "./evidence-contract.mjs";
 
 /**
  * Read retained native alert attempts. Missing evidence never proves a send was not attempted.
@@ -10,7 +11,13 @@ import { fileURLToPath } from "node:url";
  * @param {number} triggerId
  */
 export function readNotificationEvidence(directory, alertId, transition, triggerId) {
+  if (
+    ![alertId, triggerId].every((id) => Number.isSafeInteger(id) && id > 0) ||
+    !["TRIGGERED", "RESOLVED"].includes(transition)
+  )
+    throw new Error("Invalid evidence query");
   const attempts = new Map();
+  const conflicts = new Set();
   let incomplete = false;
   const files = readdirSync(directory)
     .filter((file) => /^notification-\d{4}-\d{2}-\d{2}\.jsonl$/.test(file))
@@ -30,33 +37,34 @@ export function readNotificationEvidence(directory, alertId, transition, trigger
         incomplete = true;
         continue;
       }
-      if (row.alert_id !== alertId || row.transition !== transition || row.trigger_id !== triggerId) continue;
-      if (row.event !== "notification.send" || typeof row.attempt_id !== "string") {
+      const safe = parseNotificationEvidence(row);
+      if (!safe) {
         incomplete = true;
+        if (typeof row?.attempt_id === "string" && row.attempt_id.length === 36) conflicts.add(row.attempt_id);
         continue;
       }
-      // Closed fields only; never echo arbitrary JSON or a raw parse exception.
-      const safe = Object.fromEntries(
-        [
-          "timestamp",
-          "attempt_id",
-          "alert_id",
-          "config_id",
-          "trigger_id",
-          "transition",
-          "transition_at",
-          "channel",
-          "phase",
-          "outcome",
-          "reason",
-          "http_status",
-          "duration_ms",
-        ].map((key) => [key, row[key]]),
-      );
-      if (safe.phase === "attempt") safe.outcome = "unknown";
-      const previous = attempts.get(row.attempt_id);
-      if (!previous || safe.phase === "result") attempts.set(row.attempt_id, safe);
+      const previous = attempts.get(safe.attempt_id) || {};
+      const samePhase = previous[safe.phase];
+      if (samePhase && JSON.stringify(samePhase) !== JSON.stringify(safe)) conflicts.add(safe.attempt_id);
+      previous[safe.phase] = safe;
+      attempts.set(safe.attempt_id, previous);
     }
+  }
+  const selected = [];
+  for (const [id, phases] of attempts) {
+    const { attempt, result } = phases;
+    const row = result || attempt;
+    if (attempt && result) {
+      const identity = ["alert_id", "config_id", "trigger_id", "transition", "transition_at", "channel"];
+      if (identity.some((key) => attempt[key] !== result[key]) || result.timestamp < attempt.timestamp)
+        conflicts.add(id);
+    }
+    // A transport result without its start can be genuine after a logging outage,
+    // but cannot supply complete acknowledgement evidence on its own.
+    if (result && result.outcome !== "not_attempted" && !attempt) conflicts.add(id);
+    if (conflicts.has(id)) incomplete = true;
+    if (row.alert_id !== alertId || row.transition !== transition || row.trigger_id !== triggerId) continue;
+    if (!conflicts.has(id)) selected.push(row);
   }
   return {
     alert_id: alertId,
@@ -64,7 +72,7 @@ export function readNotificationEvidence(directory, alertId, transition, trigger
     trigger_id: triggerId,
     read_incomplete: incomplete,
     outcome_if_absent: "unknown",
-    attempts: [...attempts.values()],
+    attempts: selected,
   };
 }
 
@@ -77,10 +85,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       !directory ||
       alertFlag !== "--alert" ||
       !/^[1-9]\d*$/.test(alert || "") ||
+      !Number.isSafeInteger(Number(alert)) ||
       transitionFlag !== "--transition" ||
       !["TRIGGERED", "RESOLVED"].includes(transition) ||
       triggerFlag !== "--trigger" ||
       !/^[1-9]\d*$/.test(trigger || "") ||
+      !Number.isSafeInteger(Number(trigger)) ||
       extra.length
     ) {
       throw new Error("usage");
