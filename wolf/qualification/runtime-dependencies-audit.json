@@ -1,0 +1,1398 @@
+{
+  "meaning": "Dated npm lockfile advisory observation and exact changed resolutions; counts are not exploits or release acceptance.",
+  "observedUtc": "2026-11-13T18:14:05.922Z",
+  "base": "c4c33cbbebd0e92ab48c2f0db3651c4d8b805c2e",
+  "packageLockSha256": "7342c1606229c6096e81bfe8a38877c27e5ece868239ae828b04005a107e29a4",
+  "registry": "https://registry.npmjs.org",
+  "commands": [
+    "npm audit --package-lock-only --ignore-scripts --json",
+    "npm audit --package-lock-only --ignore-scripts --omit=dev --json"
+  ],
+  "startingCounts": {
+    "builder": {
+      "low": 7,
+      "moderate": 18,
+      "high": 28,
+      "total": 53
+    },
+    "production": {
+      "low": 5,
+      "moderate": 11,
+      "high": 26,
+      "total": 42
+    }
+  },
+  "full": {
+    "auditReportVersion": 2,
+    "vulnerabilities": {
+      "@rollup/plugin-node-resolve": {
+        "name": "@rollup/plugin-node-resolve",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["deepmerge"],
+        "effects": ["@sveltejs/adapter-node"],
+        "range": ">=8.0.0",
+        "nodes": ["node_modules/@rollup/plugin-node-resolve"],
+        "fixAvailable": {
+          "name": "@sveltejs/adapter-node",
+          "version": "6.0.2",
+          "isSemVerMajor": true
+        }
+      },
+      "@scalar/sveltekit": {
+        "name": "@scalar/sveltekit",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["@sveltejs/kit"],
+        "effects": [],
+        "range": "<=0.3.27",
+        "nodes": ["node_modules/@scalar/sveltekit"],
+        "fixAvailable": {
+          "name": "@scalar/sveltekit",
+          "version": "0.3.37",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/adapter-auto": {
+        "name": "@sveltejs/adapter-auto",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["@sveltejs/kit"],
+        "effects": [],
+        "range": "1.0.0-next.0 - 7.0.1",
+        "nodes": ["node_modules/@sveltejs/adapter-auto"],
+        "fixAvailable": {
+          "name": "@sveltejs/adapter-auto",
+          "version": "8.0.1",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/adapter-node": {
+        "name": "@sveltejs/adapter-node",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["@rollup/plugin-node-resolve", "@sveltejs/kit"],
+        "effects": [],
+        "range": "1.0.0-next.0 - 5.5.8",
+        "nodes": ["node_modules/@sveltejs/adapter-node"],
+        "fixAvailable": {
+          "name": "@sveltejs/adapter-node",
+          "version": "6.0.2",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/kit": {
+        "name": "@sveltejs/kit",
+        "severity": "low",
+        "isDirect": true,
+        "via": [
+          "@sveltejs/vite-plugin-svelte",
+          {
+            "source": 1243067,
+            "name": "@sveltejs/kit",
+            "dependency": "@sveltejs/kit",
+            "title": "SvelteKit: URL redirection to untrusted site via enhanced form submission",
+            "url": "https://github.com/advisories/GHSA-pfhg-q3qv-9q6r",
+            "severity": "low",
+            "cwe": ["CWE-601"],
+            "cvss": {
+              "score": 4.7,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N"
+            },
+            "range": "<3.0.0"
+          },
+          {
+            "source": 1243076,
+            "name": "@sveltejs/kit",
+            "dependency": "@sveltejs/kit",
+            "title": "SvelteKit : XSS via untrusted cache-control header in prerendered page",
+            "url": "https://github.com/advisories/GHSA-27mw-82g8-phjj",
+            "severity": "low",
+            "cwe": ["CWE-79"],
+            "cvss": {
+              "score": 0,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:N/I:N/A:N"
+            },
+            "range": "<3.0.0"
+          }
+        ],
+        "effects": ["@scalar/sveltekit", "@sveltejs/adapter-auto", "@sveltejs/adapter-node", "runed"],
+        "range": "*",
+        "nodes": ["node_modules/@sveltejs/kit"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/vite-plugin-svelte": {
+        "name": "@sveltejs/vite-plugin-svelte",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["@sveltejs/vite-plugin-svelte-inspector", "deepmerge"],
+        "effects": ["@sveltejs/kit", "@sveltejs/vite-plugin-svelte-inspector"],
+        "range": "*",
+        "nodes": ["node_modules/@sveltejs/vite-plugin-svelte"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/vite-plugin-svelte-inspector": {
+        "name": "@sveltejs/vite-plugin-svelte-inspector",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["@sveltejs/vite-plugin-svelte"],
+        "effects": ["@sveltejs/vite-plugin-svelte"],
+        "range": "*",
+        "nodes": ["node_modules/@sveltejs/vite-plugin-svelte-inspector"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "@tailwindcss/typography": {
+        "name": "@tailwindcss/typography",
+        "severity": "moderate",
+        "isDirect": true,
+        "via": ["postcss-selector-parser"],
+        "effects": [],
+        "range": "<=0.0.0-insiders.fda8ce5 || >=0.5.5",
+        "nodes": ["node_modules/@tailwindcss/typography"],
+        "fixAvailable": {
+          "name": "@tailwindcss/typography",
+          "version": "0.5.4",
+          "isSemVerMajor": true
+        }
+      },
+      "@vitest/browser": {
+        "name": "@vitest/browser",
+        "severity": "moderate",
+        "isDirect": false,
+        "via": ["@vitest/mocker", "vitest"],
+        "effects": ["@vitest/browser-playwright"],
+        "range": "2.1.0-beta.1 - 4.1.10",
+        "nodes": ["node_modules/@vitest/browser"],
+        "fixAvailable": true
+      },
+      "@vitest/browser-playwright": {
+        "name": "@vitest/browser-playwright",
+        "severity": "moderate",
+        "isDirect": true,
+        "via": ["@vitest/browser", "@vitest/mocker", "vitest"],
+        "effects": ["vitest"],
+        "range": "<=4.1.10",
+        "nodes": ["node_modules/@vitest/browser-playwright"],
+        "fixAvailable": true
+      },
+      "@vitest/mocker": {
+        "name": "@vitest/mocker",
+        "severity": "moderate",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1193684,
+            "name": "@vitest/mocker",
+            "dependency": "@vitest/mocker",
+            "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+            "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9",
+            "severity": "moderate",
+            "cwe": ["CWE-22"],
+            "cvss": {
+              "score": 5.9,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+            },
+            "range": ">=2.1.0 <4.1.11"
+          },
+          {
+            "source": 1242767,
+            "name": "@vitest/mocker",
+            "dependency": "@vitest/mocker",
+            "title": "Vitest: Code injection via unauthenticated manual mock registration",
+            "url": "https://github.com/advisories/GHSA-qxg6-89mg-rqv8",
+            "severity": "moderate",
+            "cwe": ["CWE-94", "CWE-116", "CWE-306"],
+            "cvss": {
+              "score": 4.7,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N"
+            },
+            "range": ">=2.1.0-beta.7 <4.1.12"
+          }
+        ],
+        "effects": ["@vitest/browser", "@vitest/browser-playwright", "vitest"],
+        "range": "<=4.1.11",
+        "nodes": ["node_modules/@vitest/mocker"],
+        "fixAvailable": true
+      },
+      "bits-ui": {
+        "name": "bits-ui",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["runed", "svelte-toolbelt"],
+        "effects": [],
+        "range": ">=2.11.8",
+        "nodes": ["node_modules/bits-ui"],
+        "fixAvailable": {
+          "name": "bits-ui",
+          "version": "2.11.7",
+          "isSemVerMajor": true
+        }
+      },
+      "deepmerge": {
+        "name": "deepmerge",
+        "severity": "low",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1243505,
+            "name": "deepmerge",
+            "dependency": "deepmerge",
+            "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+            "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+            "severity": "low",
+            "cwe": ["CWE-1321"],
+            "cvss": {
+              "score": 5.3,
+              "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+            },
+            "range": ">=4.2.0 <=4.3.1"
+          }
+        ],
+        "effects": ["@rollup/plugin-node-resolve", "@sveltejs/vite-plugin-svelte"],
+        "range": ">=4.2.0",
+        "nodes": ["node_modules/deepmerge"],
+        "fixAvailable": {
+          "name": "@sveltejs/adapter-node",
+          "version": "6.0.2",
+          "isSemVerMajor": true
+        }
+      },
+      "postcss-selector-parser": {
+        "name": "postcss-selector-parser",
+        "severity": "moderate",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1243379,
+            "name": "postcss-selector-parser",
+            "dependency": "postcss-selector-parser",
+            "title": "PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion",
+            "url": "https://github.com/advisories/GHSA-rj75-hqrm-r3gf",
+            "severity": "moderate",
+            "cwe": ["CWE-400", "CWE-407"],
+            "cvss": {
+              "score": 5.9,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+            },
+            "range": "<6.1.5"
+          }
+        ],
+        "effects": ["@tailwindcss/typography"],
+        "range": "<6.1.5",
+        "nodes": ["node_modules/postcss-selector-parser"],
+        "fixAvailable": {
+          "name": "@tailwindcss/typography",
+          "version": "0.5.4",
+          "isSemVerMajor": true
+        }
+      },
+      "runed": {
+        "name": "runed",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["@sveltejs/kit"],
+        "effects": ["bits-ui", "svelte-toolbelt"],
+        "range": "0.32.0 - 0.37.1",
+        "nodes": ["node_modules/runed"],
+        "fixAvailable": {
+          "name": "bits-ui",
+          "version": "2.11.7",
+          "isSemVerMajor": true
+        }
+      },
+      "svelte-toolbelt": {
+        "name": "svelte-toolbelt",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["runed"],
+        "effects": ["bits-ui"],
+        "range": ">=0.10.6",
+        "nodes": ["node_modules/svelte-toolbelt"],
+        "fixAvailable": {
+          "name": "bits-ui",
+          "version": "2.11.7",
+          "isSemVerMajor": true
+        }
+      },
+      "vitest": {
+        "name": "vitest",
+        "severity": "moderate",
+        "isDirect": true,
+        "via": [
+          "@vitest/browser-playwright",
+          "@vitest/mocker",
+          {
+            "source": 1193683,
+            "name": "vitest",
+            "dependency": "vitest",
+            "title": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+            "url": "https://github.com/advisories/GHSA-82fw-gwwq-j7x9",
+            "severity": "moderate",
+            "cwe": ["CWE-22"],
+            "cvss": {
+              "score": 5.9,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+            },
+            "range": ">=2.1.0 <4.1.11"
+          }
+        ],
+        "effects": ["@vitest/browser", "@vitest/browser-playwright"],
+        "range": "2.1.0-beta.1 - 4.1.10",
+        "nodes": ["node_modules/vitest"],
+        "fixAvailable": true
+      }
+    },
+    "metadata": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 11,
+        "moderate": 6,
+        "high": 0,
+        "critical": 0,
+        "total": 17
+      },
+      "dependencies": {
+        "prod": 578,
+        "dev": 187,
+        "optional": 119,
+        "peer": 4,
+        "peerOptional": 0,
+        "total": 865
+      }
+    }
+  },
+  "production": {
+    "auditReportVersion": 2,
+    "vulnerabilities": {
+      "@scalar/sveltekit": {
+        "name": "@scalar/sveltekit",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["@sveltejs/kit"],
+        "effects": [],
+        "range": "<=0.3.27",
+        "nodes": ["node_modules/@scalar/sveltekit"],
+        "fixAvailable": {
+          "name": "@scalar/sveltekit",
+          "version": "0.3.37",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/kit": {
+        "name": "@sveltejs/kit",
+        "severity": "low",
+        "isDirect": true,
+        "via": [
+          "@sveltejs/vite-plugin-svelte",
+          {
+            "source": 1243067,
+            "name": "@sveltejs/kit",
+            "dependency": "@sveltejs/kit",
+            "title": "SvelteKit: URL redirection to untrusted site via enhanced form submission",
+            "url": "https://github.com/advisories/GHSA-pfhg-q3qv-9q6r",
+            "severity": "low",
+            "cwe": ["CWE-601"],
+            "cvss": {
+              "score": 4.7,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N"
+            },
+            "range": "<3.0.0"
+          },
+          {
+            "source": 1243076,
+            "name": "@sveltejs/kit",
+            "dependency": "@sveltejs/kit",
+            "title": "SvelteKit : XSS via untrusted cache-control header in prerendered page",
+            "url": "https://github.com/advisories/GHSA-27mw-82g8-phjj",
+            "severity": "low",
+            "cwe": ["CWE-79"],
+            "cvss": {
+              "score": 0,
+              "vectorString": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:N/I:N/A:N"
+            },
+            "range": "<3.0.0"
+          }
+        ],
+        "effects": ["@scalar/sveltekit", "runed"],
+        "range": "*",
+        "nodes": ["node_modules/@sveltejs/kit"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/vite-plugin-svelte": {
+        "name": "@sveltejs/vite-plugin-svelte",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["@sveltejs/vite-plugin-svelte-inspector", "deepmerge"],
+        "effects": ["@sveltejs/kit", "@sveltejs/vite-plugin-svelte-inspector"],
+        "range": "*",
+        "nodes": ["node_modules/@sveltejs/vite-plugin-svelte"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "@sveltejs/vite-plugin-svelte-inspector": {
+        "name": "@sveltejs/vite-plugin-svelte-inspector",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["@sveltejs/vite-plugin-svelte"],
+        "effects": ["@sveltejs/vite-plugin-svelte"],
+        "range": "*",
+        "nodes": ["node_modules/@sveltejs/vite-plugin-svelte-inspector"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "bits-ui": {
+        "name": "bits-ui",
+        "severity": "low",
+        "isDirect": true,
+        "via": ["runed", "svelte-toolbelt"],
+        "effects": [],
+        "range": ">=2.11.8",
+        "nodes": ["node_modules/bits-ui"],
+        "fixAvailable": {
+          "name": "bits-ui",
+          "version": "2.11.7",
+          "isSemVerMajor": true
+        }
+      },
+      "deepmerge": {
+        "name": "deepmerge",
+        "severity": "low",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1243505,
+            "name": "deepmerge",
+            "dependency": "deepmerge",
+            "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+            "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+            "severity": "low",
+            "cwe": ["CWE-1321"],
+            "cvss": {
+              "score": 5.3,
+              "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+            },
+            "range": ">=4.2.0 <=4.3.1"
+          }
+        ],
+        "effects": ["@sveltejs/vite-plugin-svelte"],
+        "range": ">=4.2.0",
+        "nodes": ["node_modules/deepmerge"],
+        "fixAvailable": {
+          "name": "@sveltejs/kit",
+          "version": "3.2.0",
+          "isSemVerMajor": true
+        }
+      },
+      "runed": {
+        "name": "runed",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["@sveltejs/kit"],
+        "effects": ["bits-ui", "svelte-toolbelt"],
+        "range": "0.32.0 - 0.37.1",
+        "nodes": ["node_modules/runed"],
+        "fixAvailable": {
+          "name": "bits-ui",
+          "version": "2.11.7",
+          "isSemVerMajor": true
+        }
+      },
+      "svelte-toolbelt": {
+        "name": "svelte-toolbelt",
+        "severity": "low",
+        "isDirect": false,
+        "via": ["runed"],
+        "effects": ["bits-ui"],
+        "range": ">=0.10.6",
+        "nodes": ["node_modules/svelte-toolbelt"],
+        "fixAvailable": {
+          "name": "bits-ui",
+          "version": "2.11.7",
+          "isSemVerMajor": true
+        }
+      }
+    },
+    "metadata": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 8,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 8
+      },
+      "dependencies": {
+        "prod": 578,
+        "dev": 187,
+        "optional": 119,
+        "peer": 4,
+        "peerOptional": 0,
+        "total": 865
+      }
+    }
+  },
+  "changedResolutions": [
+    {
+      "path": "node_modules/@emnapi/runtime",
+      "before": "1.8.1",
+      "after": "1.11.3"
+    },
+    {
+      "path": "node_modules/@esbuild/aix-ppc64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/android-arm",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/android-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/android-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/darwin-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/darwin-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/freebsd-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/freebsd-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-arm",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-ia32",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-loong64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-mips64el",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-ppc64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-riscv64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-s390x",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/linux-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/netbsd-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/netbsd-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/openbsd-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/openbsd-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/openharmony-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/sunos-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/win32-arm64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/win32-ia32",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@esbuild/win32-x64",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/@grpc/grpc-js",
+      "before": "1.14.3",
+      "after": "1.14.7"
+    },
+    {
+      "path": "node_modules/@img/colour",
+      "before": "1.0.0",
+      "after": "1.1.0"
+    },
+    {
+      "path": "node_modules/@img/sharp-darwin-arm64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-darwin-x64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-freebsd-wasm32",
+      "before": null,
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-darwin-arm64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-darwin-x64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linux-arm",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linux-arm64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linux-ppc64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linux-riscv64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linux-s390x",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linux-x64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linuxmusl-arm64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-libvips-linuxmusl-x64",
+      "before": "1.2.4",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/@img/sharp-linux-arm",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linux-arm64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linux-ppc64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linux-riscv64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linux-s390x",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linux-x64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linuxmusl-arm64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-linuxmusl-x64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-wasm32",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-webcontainers-wasm32",
+      "before": null,
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-win32-arm64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-win32-ia32",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@img/sharp-win32-x64",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/@ioredis/commands",
+      "before": "1.5.0",
+      "after": "1.10.0"
+    },
+    {
+      "path": "node_modules/@isaacs/nonrecursive-glob-match",
+      "before": null,
+      "after": "1.1.0"
+    },
+    {
+      "path": "node_modules/@jridgewell/sourcemap-codec",
+      "before": "1.5.5",
+      "after": "1.6.0"
+    },
+    {
+      "path": "node_modules/@msgpackr-extract/msgpackr-extract-darwin-arm64",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/@msgpackr-extract/msgpackr-extract-darwin-x64",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/@msgpackr-extract/msgpackr-extract-linux-arm",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/@msgpackr-extract/msgpackr-extract-linux-arm64",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/@msgpackr-extract/msgpackr-extract-linux-x64",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/@msgpackr-extract/msgpackr-extract-win32-x64",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/@nodable/entities",
+      "before": null,
+      "after": "3.1.0"
+    },
+    {
+      "path": "node_modules/@rollup/plugin-replace",
+      "before": null,
+      "after": "6.0.3"
+    },
+    {
+      "path": "node_modules/@sveltejs/acorn-typescript",
+      "before": "1.0.8",
+      "after": "1.0.13"
+    },
+    {
+      "path": "node_modules/@sveltejs/adapter-node",
+      "before": "5.5.3",
+      "after": "5.5.8"
+    },
+    {
+      "path": "node_modules/@sveltejs/kit",
+      "before": "2.55.0",
+      "after": "2.70.4"
+    },
+    {
+      "path": "node_modules/acorn",
+      "before": "8.15.0",
+      "after": "8.19.0"
+    },
+    {
+      "path": "node_modules/agent-base",
+      "before": null,
+      "after": "6.0.2"
+    },
+    {
+      "path": "node_modules/anynum",
+      "before": null,
+      "after": "1.0.1"
+    },
+    {
+      "path": "node_modules/axios",
+      "before": "1.13.5",
+      "after": "1.21.1"
+    },
+    {
+      "path": "node_modules/baseline-browser-mapping",
+      "before": "2.9.19",
+      "after": "2.11.37"
+    },
+    {
+      "path": "node_modules/body-parser",
+      "before": "2.2.2",
+      "after": "2.4.0"
+    },
+    {
+      "path": "node_modules/body-parser/node_modules/content-type",
+      "before": null,
+      "after": "2.1.0"
+    },
+    {
+      "path": "node_modules/body-parser/node_modules/iconv-lite",
+      "before": "0.7.2",
+      "after": "0.7.3"
+    },
+    {
+      "path": "node_modules/brace-expansion",
+      "before": "5.0.4",
+      "after": "5.0.13"
+    },
+    {
+      "path": "node_modules/browserslist",
+      "before": "4.28.1",
+      "after": "4.29.5"
+    },
+    {
+      "path": "node_modules/bullmq",
+      "before": "5.67.3",
+      "after": "5.81.5"
+    },
+    {
+      "path": "node_modules/caniuse-lite",
+      "before": "1.0.30001769",
+      "after": "1.0.30001826"
+    },
+    {
+      "path": "node_modules/cluster-key-slot",
+      "before": "1.1.2",
+      "after": "1.1.1"
+    },
+    {
+      "path": "node_modules/colord",
+      "before": "2.9.3",
+      "after": "2.12.0"
+    },
+    {
+      "path": "node_modules/devalue",
+      "before": "5.6.4",
+      "after": "5.9.4"
+    },
+    {
+      "path": "node_modules/dompurify",
+      "before": "3.3.3",
+      "after": "3.4.17"
+    },
+    {
+      "path": "node_modules/electron-to-chromium",
+      "before": "1.5.286",
+      "after": "1.5.485"
+    },
+    {
+      "path": "node_modules/esbuild",
+      "before": "0.27.3",
+      "after": "0.28.2"
+    },
+    {
+      "path": "node_modules/esrap",
+      "before": "2.2.3",
+      "after": "2.4.0"
+    },
+    {
+      "path": "node_modules/fast-xml-builder",
+      "before": "1.1.4",
+      "after": "1.3.2"
+    },
+    {
+      "path": "node_modules/fast-xml-parser",
+      "before": "5.5.8",
+      "after": "5.12.1"
+    },
+    {
+      "path": "node_modules/figlet",
+      "before": "1.10.0",
+      "after": "1.12.0"
+    },
+    {
+      "path": "node_modules/follow-redirects",
+      "before": "1.15.11",
+      "after": "1.16.3"
+    },
+    {
+      "path": "node_modules/form-data",
+      "before": "4.0.5",
+      "after": "4.0.6"
+    },
+    {
+      "path": "node_modules/front-matter/node_modules/js-yaml",
+      "before": "3.14.2",
+      "after": "3.15.2"
+    },
+    {
+      "path": "node_modules/gamedig",
+      "before": "5.3.2",
+      "after": "5.3.3"
+    },
+    {
+      "path": "node_modules/gamedig/node_modules/iconv-lite",
+      "before": "0.7.0",
+      "after": "0.7.2"
+    },
+    {
+      "path": "node_modules/glob",
+      "before": "13.0.6",
+      "after": "14.0.6"
+    },
+    {
+      "path": "node_modules/hasown",
+      "before": "2.0.2",
+      "after": "2.0.4"
+    },
+    {
+      "path": "node_modules/https-proxy-agent",
+      "before": null,
+      "after": "5.0.1"
+    },
+    {
+      "path": "node_modules/ioredis",
+      "before": "5.9.2",
+      "after": "5.11.1"
+    },
+    {
+      "path": "node_modules/is-unsafe",
+      "before": null,
+      "after": "2.0.3"
+    },
+    {
+      "path": "node_modules/js-yaml",
+      "before": "4.1.1",
+      "after": "4.3.2"
+    },
+    {
+      "path": "node_modules/lodash",
+      "before": "4.17.23",
+      "after": "4.18.1"
+    },
+    {
+      "path": "node_modules/lodash-es",
+      "before": "4.17.23",
+      "after": "4.18.1"
+    },
+    {
+      "path": "node_modules/lru-cache",
+      "before": "11.2.6",
+      "after": "11.5.3"
+    },
+    {
+      "path": "node_modules/minimatch",
+      "before": "10.2.4",
+      "after": "11.0.8"
+    },
+    {
+      "path": "node_modules/msgpackr",
+      "before": "1.11.5",
+      "after": "2.0.5"
+    },
+    {
+      "path": "node_modules/msgpackr-extract",
+      "before": "3.0.3",
+      "after": "3.0.7"
+    },
+    {
+      "path": "node_modules/mysql2",
+      "before": "3.16.3",
+      "after": "3.24.6"
+    },
+    {
+      "path": "node_modules/mysql2/node_modules/iconv-lite",
+      "before": "0.7.2",
+      "after": "0.7.3"
+    },
+    {
+      "path": "node_modules/nanoid",
+      "before": "5.1.6",
+      "after": "5.1.16"
+    },
+    {
+      "path": "node_modules/node-releases",
+      "before": "2.0.27",
+      "after": "2.0.64"
+    },
+    {
+      "path": "node_modules/nodemailer",
+      "before": "7.0.13",
+      "after": "10.5.0"
+    },
+    {
+      "path": "node_modules/path-expression-matcher",
+      "before": "1.2.0",
+      "after": "1.6.2"
+    },
+    {
+      "path": "node_modules/path-scurry",
+      "before": "2.0.2",
+      "after": "3.0.0"
+    },
+    {
+      "path": "node_modules/path-to-regexp",
+      "before": "8.3.0",
+      "after": "8.4.2"
+    },
+    {
+      "path": "node_modules/picomatch",
+      "before": "4.0.3",
+      "after": "4.0.7"
+    },
+    {
+      "path": "node_modules/postal-mime",
+      "before": null,
+      "after": "2.7.6"
+    },
+    {
+      "path": "node_modules/postcss",
+      "before": "8.5.6",
+      "after": "8.5.32"
+    },
+    {
+      "path": "node_modules/postcss/node_modules/nanoid",
+      "before": "3.3.11",
+      "after": "3.3.20"
+    },
+    {
+      "path": "node_modules/proxy-from-env",
+      "before": "1.1.0",
+      "after": "2.1.0"
+    },
+    {
+      "path": "node_modules/qs",
+      "before": "6.14.2",
+      "after": "6.17.1"
+    },
+    {
+      "path": "node_modules/resend",
+      "before": "6.9.1",
+      "after": "6.38.0"
+    },
+    {
+      "path": "node_modules/semver",
+      "before": "7.7.3",
+      "after": "7.8.5"
+    },
+    {
+      "path": "node_modules/sharp",
+      "before": "0.34.5",
+      "after": "0.35.5"
+    },
+    {
+      "path": "node_modules/side-channel",
+      "before": "1.1.0",
+      "after": "1.1.1"
+    },
+    {
+      "path": "node_modules/side-channel-list",
+      "before": "1.0.0",
+      "after": "1.0.1"
+    },
+    {
+      "path": "node_modules/source-map-js",
+      "before": "1.2.1",
+      "after": "1.2.2"
+    },
+    {
+      "path": "node_modules/sql-escaper",
+      "before": null,
+      "after": "1.5.2"
+    },
+    {
+      "path": "node_modules/standardwebhooks",
+      "before": "1.0.0",
+      "after": "1.1.1"
+    },
+    {
+      "path": "node_modules/strnum",
+      "before": "2.2.2",
+      "after": "2.5.1"
+    },
+    {
+      "path": "node_modules/svelte",
+      "before": "5.54.1",
+      "after": "5.57.3"
+    },
+    {
+      "path": "node_modules/svelte/node_modules/@types/estree",
+      "before": null,
+      "after": "1.0.10"
+    },
+    {
+      "path": "node_modules/telnet-client",
+      "before": "2.2.6",
+      "after": "2.2.13"
+    },
+    {
+      "path": "node_modules/type-is",
+      "before": "2.0.1",
+      "after": "2.1.0"
+    },
+    {
+      "path": "node_modules/type-is/node_modules/content-type",
+      "before": null,
+      "after": "2.1.0"
+    },
+    {
+      "path": "node_modules/undici",
+      "before": "7.24.5",
+      "after": "7.30.2"
+    },
+    {
+      "path": "node_modules/update-browserslist-db",
+      "before": "1.2.3",
+      "after": "1.3.4"
+    },
+    {
+      "path": "node_modules/uuid",
+      "before": "11.1.0",
+      "after": "11.1.1"
+    },
+    {
+      "path": "node_modules/vite",
+      "before": "7.3.1",
+      "after": "7.3.8"
+    },
+    {
+      "path": "node_modules/xml-naming",
+      "before": null,
+      "after": "0.3.0"
+    },
+    {
+      "path": "node_modules/zod",
+      "before": "4.3.6",
+      "after": "4.6.7"
+    },
+    {
+      "path": "node_modules/@selderee/plugin-htmlparser2",
+      "before": "0.11.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/@zone-eu/mailsplit",
+      "before": "5.4.8",
+      "after": null
+    },
+    {
+      "path": "node_modules/encoding-japanese",
+      "before": "2.2.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/he",
+      "before": "1.2.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/html-to-text",
+      "before": "9.0.5",
+      "after": null
+    },
+    {
+      "path": "node_modules/html-to-text/node_modules/htmlparser2",
+      "before": "8.0.2",
+      "after": null
+    },
+    {
+      "path": "node_modules/leac",
+      "before": "0.6.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/libbase64",
+      "before": "1.3.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/libmime",
+      "before": "5.3.7",
+      "after": null
+    },
+    {
+      "path": "node_modules/libqp",
+      "before": "2.1.1",
+      "after": null
+    },
+    {
+      "path": "node_modules/linkify-it",
+      "before": "5.0.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/lodash.defaults",
+      "before": "4.2.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/lodash.isarguments",
+      "before": "3.1.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/mailparser",
+      "before": "3.9.5",
+      "after": null
+    },
+    {
+      "path": "node_modules/mailparser/node_modules/iconv-lite",
+      "before": "0.7.2",
+      "after": null
+    },
+    {
+      "path": "node_modules/mailparser/node_modules/nodemailer",
+      "before": "8.0.3",
+      "after": null
+    },
+    {
+      "path": "node_modules/parseley",
+      "before": "0.12.1",
+      "after": null
+    },
+    {
+      "path": "node_modules/peberminta",
+      "before": "0.9.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/punycode.js",
+      "before": "2.3.1",
+      "after": null
+    },
+    {
+      "path": "node_modules/selderee",
+      "before": "0.11.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/seq-queue",
+      "before": "0.0.5",
+      "after": null
+    },
+    {
+      "path": "node_modules/sqlstring",
+      "before": "2.3.3",
+      "after": null
+    },
+    {
+      "path": "node_modules/svix",
+      "before": "1.84.1",
+      "after": null
+    },
+    {
+      "path": "node_modules/svix/node_modules/uuid",
+      "before": "10.0.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/tlds",
+      "before": "1.261.0",
+      "after": null
+    },
+    {
+      "path": "node_modules/uc.micro",
+      "before": "2.1.0",
+      "after": null
+    }
+  ]
+}
