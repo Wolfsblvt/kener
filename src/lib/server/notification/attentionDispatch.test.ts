@@ -13,12 +13,25 @@ vi.mock("../cache/cache", () => ({
   setCache: async () => {},
   deleteCache: async () => {},
 }));
-const queue = vi.hoisted(() => ({ run: null as null | ((job: { data: unknown }) => Promise<void>) }));
+const queue = vi.hoisted(() => ({
+  run: null as null | ((job: { data: unknown }) => Promise<unknown>),
+  scheduler: null as null | ((job: { data: unknown }) => Promise<unknown>),
+}));
+vi.mock("../schedulers/monitorSchedulers.js", () => ({
+  getSchedulers: async () => [],
+  addJobToSchedulerQueue: async () => {},
+  removeJobFromSchedulerQueue: async () => {},
+}));
 vi.mock("../queues/q.js", () => ({
   default: {
-    createQueue: () => ({ add: async (_name: string, data: unknown) => queue.run!({ data }) }),
-    createWorker: (_queue: unknown, run: typeof queue.run) => {
-      queue.run = run;
+    createQueue: (name: string) => ({
+      name,
+      add: async (_name: string, data: unknown) => queue.run!({ data }),
+      upsertJobScheduler: async () => {},
+    }),
+    createWorker: (target: { name: string }, run: typeof queue.run) => {
+      if (target.name === "appSchedulerQueue") queue.scheduler = run;
+      else queue.run = run;
       return { on: vi.fn(), close: vi.fn() };
     },
   },
@@ -29,6 +42,7 @@ import { sendAlertNotifications } from "./alertNotifications.js";
 import { loadAttentionComposer } from "./attentionComposer.js";
 import { attentionReceipt } from "./attentionDispatch.js";
 import { applyAttentionChange } from "./attentionOperator.js";
+import appScheduler from "../schedulers/appScheduler.js";
 import sendWebhook from "./webhook_notification.js";
 import type { MonitorAlertConfigRecord, MonitorAlertV2Record, TriggerRecord } from "../types/db.js";
 import type { SiteDataForNotification } from "./types.js";
@@ -150,6 +164,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await shutdown();
+  await appScheduler.shutdown();
   vi.useRealTimers();
   vi.unstubAllGlobals();
   delete process.env.KENER_ATTENTION_CONFIG;
@@ -167,6 +182,62 @@ it("migrates idempotently and preserves CAS claims/operator edits on the actual 
   expect(await db.saveAttentionState(7, 3, first.revision, { facts: { pickupKnown: true }, messages: [] })).toBe(true);
   expect(await db.saveAttentionState(7, 3, first.revision, { facts: {}, messages: [] })).toBe(false);
   expect((await db.ensureAttentionState(7, 3)).state.facts.pickupKnown).toBe(true);
+});
+
+it("adds a retry clock to older rejected recovery without arming uncertain effects or changing receipts", async () => {
+  const migration = await import("../../../../migrations/20261113020000_attention_retry_due");
+  await migration.down(knex);
+  const failedState = {
+    facts: {},
+    messages: [{ attempt: "old-recovery", event: "recovery", at, outcome: "failed", boundary: "operator" }],
+  };
+  await knex("alert_notification_state").insert({
+    alert_id: 7,
+    trigger_id: 3,
+    revision: 4,
+    state_json: JSON.stringify(failedState),
+  });
+  await migration.up(knex);
+  await migration.up(knex);
+  expect(await db.getDueAttentionRetries(Date.parse(at) / 1000, [3])).toEqual([{ alert_id: 7, trigger_id: 3 }]);
+  expect(await db.getAttentionState(7, 3)).toEqual({ revision: 4, state: failedState });
+  for (const held of [
+    { outcome: "unknown", boundary: "operator" },
+    { outcome: "failed", boundary: "http" },
+  ]) {
+    await migration.down(knex);
+    await knex("alert_notification_state").update({
+      state_json: JSON.stringify({ ...failedState, messages: [{ ...failedState.messages[0], ...held }] }),
+    });
+    await migration.up(knex);
+    expect(await db.getDueAttentionRetries(Date.parse(at) / 1000, [3])).toEqual([]);
+  }
+});
+
+it("holds legacy unqualified failed receipts until explicit no-effect reconciliation", async () => {
+  const record = await db.ensureAttentionState(7, 3);
+  await db.saveAttentionState(7, 3, record.revision, {
+    facts: {},
+    messages: [{ attempt: "old-http-only", event: "opening", at, outcome: "failed", boundary: "http" }],
+  });
+  await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  expect(fetch).not.toHaveBeenCalled();
+  const current = (await db.getAttentionState(7, 3))!;
+  expect(
+    (
+      await attentionApi.PATCH(
+        apiEvent({
+          action: "reconcile",
+          revision: current.revision,
+          reference: "fixture-no-effect-investigation",
+          attempt: "old-http-only",
+          outcome: "failed",
+        }),
+      )
+    ).status,
+  ).toBe(200);
+  await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  expect(fetch).toHaveBeenCalledTimes(1);
 });
 
 it("refuses a changed operated artifact before HTTP and without falling back to templates", async () => {
@@ -214,10 +285,210 @@ it("escapes quotes/newlines and never templates the composed meaning", async () 
 });
 
 it("does not count a provider rejection or missing response as sent", () => {
-  expect(attentionReceipt({ status: 400 }).outcome).toBe("failed");
-  expect(attentionReceipt({ status: 200, data: '{"ok":false}' }).outcome).toBe("failed");
+  expect(attentionReceipt({ status: 400 }).outcome).toBe("unknown");
+  expect(
+    attentionReceipt({ status: 400, data: '{"ok":false,"error_code":400,"description":"Rejected"}' }).outcome,
+  ).toBe("failed");
   expect(attentionReceipt({ status: 200, data: "unreadable" }).outcome).toBe("accepted");
   expect(attentionReceipt({ error: "timeout" }).outcome).toBe("unknown");
+});
+
+const apiEvent = (input: unknown = {}) =>
+  ({
+    params: { alert_id: "7", trigger_id: "3" },
+    request: new Request("https://example.invalid/api/v4/attention/7/3", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  }) as Parameters<typeof attentionApi.PATCH>[0];
+const rejection = (retryAfter?: number) =>
+  new Response(
+    JSON.stringify({
+      ok: false,
+      error_code: 429,
+      description: "Synthetic rejection",
+      ...(retryAfter ? { parameters: { retry_after: retryAfter } } : {}),
+    }),
+    { status: 429 },
+  );
+
+it.each(["mismatch", "missing-composer", "missing-declaration", "invalid-declaration", "missing-config"])(
+  "keeps persisted recovery accessible with %s while evaluation refuses",
+  async (broken) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Synthetic interruption");
+      }),
+    );
+    await sendAlertNotifications(alert, config, site, monitor, [trigger]);
+    const operated = JSON.parse(readFileSync(configPath, "utf8"));
+    if (broken === "mismatch") writeFileSync(operated.composer.path, "export const changed=true;");
+    if (broken === "missing-composer") rmSync(operated.composer.path);
+    if (broken === "missing-declaration") rmSync(operated.declaration.path);
+    if (broken === "invalid-declaration") {
+      writeFileSync(operated.declaration.path, "invalid json");
+      operated.declaration = pin(operated.declaration.path);
+      writeFileSync(configPath, JSON.stringify(operated));
+    }
+    if (broken === "missing-config") rmSync(configPath);
+    const readResponse = await attentionApi.GET(apiEvent());
+    expect(readResponse.status).toBe(200);
+    const { record } = await readResponse.json();
+    expect(record.state.messages[0].outcome).toBe("unknown");
+    expect(
+      (
+        await attentionApi.PATCH(
+          apiEvent({ action: "retry", revision: record.revision, reference: "fixture-no-proof" }),
+        )
+      ).status,
+    ).toBe(409);
+    const reconciled = await attentionApi.PATCH(
+      apiEvent({
+        revision: record.revision,
+        reference: "fixture-no-effect-proof",
+        action: "reconcile",
+        attempt: record.state.messages[0].attempt,
+        outcome: "failed",
+      }),
+    );
+    expect(reconciled.status).toBe(200);
+    expect((await attentionApi.POST(apiEvent({ action: "evaluate", revision: record.revision + 1 }))).status).toBe(503);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect((await (await attentionApi.GET(apiEvent())).json()).record.state.messages[0].reference).toBe(
+      "fixture-no-effect-proof",
+    );
+  },
+);
+
+it("clears and replaces scalar/custody facts without stale cause or contradictory recovery", async () => {
+  let record = await db.ensureAttentionState(7, 3);
+  const change = async (facts: unknown) => {
+    const response = await attentionApi.PATCH(
+      apiEvent({ action: "facts", revision: record.revision, reference: "fixture-correction", facts }),
+    );
+    record = (await db.getAttentionState(7, 3))!;
+    return response;
+  };
+  expect(
+    (
+      await change({
+        failureKind: "configuration-error",
+        reason: "Old cause",
+        endedBy: "Operator",
+        pickupKnown: true,
+        pickup: { who: "Operator", session: "fixture", since: at, current: true },
+      })
+    ).status,
+  ).toBe(200);
+  expect((await change({ pickupKnown: false })).status).toBe(409);
+  expect((await change({ endedOnItsOwn: true })).status).toBe(409);
+  expect(
+    (await change({ failureKind: "unavailable", endedBy: null, endedOnItsOwn: true, pickupKnown: false, pickup: null }))
+      .status,
+  ).toBe(200);
+  expect(record.state.facts).toEqual({
+    failureKind: "unavailable",
+    endedOnItsOwn: true,
+    pickupKnown: false,
+    pickup: null,
+  });
+  expect((await change({ reason: "Corrected", failureKind: null, endedOnItsOwn: false })).status).toBe(200);
+  expect(record.state.facts).not.toHaveProperty("failureKind");
+  expect((await change({ reason: null })).status).toBe(200);
+  expect(record.state.facts).not.toHaveProperty("reason");
+  expect(fetch).not.toHaveBeenCalled();
+});
+
+it.each(["server", "body-read", "transport", "unqualified-400"])(
+  "holds %s ambiguity through the real sender on later cadence",
+  async (failure) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        if (failure === "transport") throw new TypeError("Synthetic interruption");
+        if (failure === "body-read")
+          return {
+            ok: false,
+            status: 400,
+            text: async () => {
+              throw new TypeError("Body interrupted");
+            },
+          };
+        return new Response(
+          failure === "server" ? '{"ok":false,"error_code":500,"description":"Server failed"}' : "Bad gateway body",
+          { status: failure === "server" ? 503 : 400 },
+        );
+      }),
+    );
+    await sendAlertNotifications(alert, config, site, monitor, [trigger]);
+    vi.setSystemTime(Date.parse(at) + 3600_000);
+    await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect((await db.getAttentionState(7, 3))!.state.messages[0].outcome).toBe("unknown");
+    expect(await db.getDueAttentionRetries(Math.floor(Date.now() / 1000), [3])).toEqual([]);
+  },
+);
+
+it("persists rejection backoff/budget across monitor samples and supports explicit coworker rearm", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => rejection()),
+  );
+  await sendAlertNotifications(alert, config, site, monitor, [trigger]);
+  for (let seconds = 1; seconds < 60; seconds++) {
+    vi.setSystemTime(Date.parse(at) + seconds * 1000);
+    await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  }
+  expect(fetch).toHaveBeenCalledTimes(1);
+  for (const seconds of [60, 360, 2160]) {
+    vi.setSystemTime(Date.parse(at) + seconds * 1000);
+    await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  }
+  vi.setSystemTime(Date.parse(at) + 86400_000);
+  await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  const record = (await db.getAttentionState(7, 3))!;
+  expect(fetch).toHaveBeenCalledTimes(4);
+  expect(record.state.messages).toHaveLength(4);
+  expect(record.state.retry).toMatchObject({ attempts: 4, exhausted: true, nextAt: null });
+  expect(await db.getDueAttentionRetries(Math.floor(Date.now() / 1000), [3])).toEqual([]);
+  expect(
+    (
+      await attentionApi.PATCH(
+        apiEvent({ action: "retry", revision: record.revision, reference: "fixture-configuration-corrected" }),
+      )
+    ).status,
+  ).toBe(200);
+  vi.stubGlobal("fetch", fetchReceipt());
+  await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect((await db.getAttentionState(7, 3))!.state.messages.at(-1)?.outcome).toBe("sent");
+});
+
+it("honors a provider's longer rejection retry_after", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => rejection(120)),
+  );
+  await sendAlertNotifications(alert, config, site, monitor, [trigger]);
+  vi.setSystemTime(Date.parse(at) + 60_000);
+  await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect((await db.getAttentionState(7, 3))!.state.retry?.nextAt).toBe("2026-11-12T10:02:00.000Z");
+});
+
+it("starts the rejection delay when the response is observed, after a slow request", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      vi.setSystemTime(Date.parse(at) + 120_000);
+      return rejection();
+    }),
+  );
+  await sendAlertNotifications(alert, config, site, monitor, [trigger]);
+  expect((await db.getAttentionState(7, 3))!.state.retry?.nextAt).toBe("2026-11-12T10:03:00.000Z");
+  await sendAlertNotifications(alert, config, site, monitor, [trigger], true);
+  expect(fetch).toHaveBeenCalledTimes(1);
 });
 
 it("requires complete pickup and a current revision/reference; reconciliation does not erase an attempt", () => {
@@ -342,6 +613,37 @@ describe.skipIf(!process.env.KENER_TEST_ATTENTION_COMPOSER)(
       });
       await push("fixture", ts, status);
     }
+    it("retries a rejected RESOLVED recovery on the existing app cadence without another monitor sample", async () => {
+      configure(process.env.KENER_TEST_ATTENTION_COMPOSER!, declaration("immediate"));
+      await sample("DOWN");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => rejection()),
+      );
+      await sample("UP", 1);
+      expect((await db.getMonitorAlertV2WithConfig(7))!.alert_status).toBe("RESOLVED");
+      const failed = (await db.getAttentionState(7, 3))!;
+      expect(failed.state.messages.at(-1)).toMatchObject({ event: "recovery", outcome: "failed" });
+      expect(await db.getDueAttentionRetries(Date.parse(at) / 1000 + 119, [3])).toEqual([]);
+      expect(await db.getDueAttentionRetries(Date.parse(at) / 1000 + 120, [3])).toEqual([
+        { alert_id: 7, trigger_id: 3 },
+      ]);
+      vi.setSystemTime(Date.parse(at) + 120_000);
+      vi.stubGlobal("fetch", fetchReceipt());
+      await appScheduler.start();
+      await queue.scheduler!({ data: {} });
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(
+        (await db.getAttentionState(7, 3))!.state.messages
+          .filter((item) => item.event === "recovery")
+          .map((item) => item.outcome),
+      ).toEqual(["failed", "sent"]);
+      vi.setSystemTime(Date.parse(at) + 180_000);
+      await queue.scheduler!({ data: {} });
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(await db.getDueAttentionRetries(Math.floor(Date.now() / 1000), [3])).toEqual([]);
+    });
+
     it("opens immediately, follows once at thirty minutes, then recovers using successful native receipts", async () => {
       configure(process.env.KENER_TEST_ATTENTION_COMPOSER!, declaration("immediate"));
       await sample("DOWN");

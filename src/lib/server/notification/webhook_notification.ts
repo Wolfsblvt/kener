@@ -104,6 +104,7 @@ export default async function send(
         error: `Webhook request failed with status ${response.status}`,
         status: response.status,
         details: errorText,
+        ...(composedText === undefined ? {} : { data: errorText }),
       };
     }
 

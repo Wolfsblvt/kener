@@ -94,6 +94,7 @@ class DbImpl {
   getAttentionState!: AlertsRepository["getAttentionState"];
   ensureAttentionState!: AlertsRepository["ensureAttentionState"];
   saveAttentionState!: AlertsRepository["saveAttentionState"];
+  getDueAttentionRetries!: AlertsRepository["getDueAttentionRetries"];
   insertAlert!: AlertsRepository["insertAlert"];
   alertExistsIncident!: AlertsRepository["alertExistsIncident"];
   alertExists!: AlertsRepository["alertExists"];
@@ -488,6 +489,7 @@ class DbImpl {
     this.getAttentionState = this.alerts.getAttentionState.bind(this.alerts);
     this.ensureAttentionState = this.alerts.ensureAttentionState.bind(this.alerts);
     this.saveAttentionState = this.alerts.saveAttentionState.bind(this.alerts);
+    this.getDueAttentionRetries = this.alerts.getDueAttentionRetries.bind(this.alerts);
     this.updateAlertStatus = this.alerts.updateAlertStatus.bind(this.alerts);
     this.incrementAlertHealthChecks = this.alerts.incrementAlertHealthChecks.bind(this.alerts);
     this.addIncidentNumberToAlert = this.alerts.addIncidentNumberToAlert.bind(this.alerts);

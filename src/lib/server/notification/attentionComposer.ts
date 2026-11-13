@@ -16,8 +16,8 @@ interface Composer {
   composeKener(declaration: unknown, variables: AlertVariableMap, now: string, facts: unknown): AttentionComposition;
 }
 
-/** No configuration leaves the public fork independent. Broken configured inputs refuse opted sends. */
-export async function loadAttentionComposer(triggerId: number) {
+/** Relationship selection does not read or execute either operated artifact. */
+export async function readAttentionConfig() {
   const configPath = process.env.KENER_ATTENTION_CONFIG;
   if (!configPath) return null;
   const config = JSON.parse(await readFile(configPath, "utf8")) as OperatedConfig;
@@ -27,7 +27,13 @@ export async function loadAttentionComposer(triggerId: number) {
     config.triggerIds.some((id) => !Number.isSafeInteger(id) || id <= 0)
   )
     throw new Error("attention_configuration_invalid");
-  if (!config.triggerIds.includes(triggerId)) return null;
+  return config;
+}
+
+/** No configuration leaves the public fork independent. Broken configured inputs refuse opted sends. */
+export async function loadAttentionComposer(triggerId: number) {
+  const config = await readAttentionConfig();
+  if (!config?.triggerIds.includes(triggerId)) return null;
   const readPinned = async (pin: OperatedConfig["composer"]) => {
     if (!pin || !isAbsolute(pin.path) || !/^[a-f0-9]{64}$/.test(pin.sha256)) throw new Error("attention_pin_invalid");
     const bytes = await readFile(pin.path);

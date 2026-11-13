@@ -11,6 +11,8 @@ An operator may explicitly opt a trigger into the fork's `KENER_ATTENTION_CONFIG
 
 The bearer-authenticated `/api/v4/attention/<alert_id>/<trigger_id>` route reads current sender state. PATCH with current `revision` and an attributable `reference` carries `action: facts` or exact-attempt `action: reconcile`; pickup alone never sends. POST `action: evaluate` with current revision explicitly re-evaluates after reconciliation, including a held recovery. Read before retrying an interrupted effect. Neither provider submission nor operator reconciliation proves device/human receipt. The fork's `wolf/qualification/attention-composer.md` defines the complete input and recovery contract; the operated composer/declaration remain outside this public source.
 
+Persisted Read/Reconcile remains available when operated files or their pins break; Evaluate/send refuses. Facts PATCH retains omitted fields; `null` clears `failureKind`, `reason`, `endedBy` or pickup. Changing failure kind clears an omitted old reason. Contradictory pickup/recovery facts refuse without changing state. Known Telegram rejections retry after 1, 5 and 30 minutes, honoring a longer provider wait; server/transport/body-read uncertainty stays held. After four total attempts, a coworker can correct the cause and PATCH `action: retry` with current revision/reference, then Evaluate. The existing application cadence also resumes due rejected recovery after resolution. Read the complete fork contract before enabling this source behavior.
+
 ## Canonical alert variables {#canonical-alert-variables}
 
 | Variable                         |

@@ -30,8 +30,23 @@ export class AlertsRepository extends BaseRepository {
   ): Promise<boolean> {
     const count = await this.knex("alert_notification_state")
       .where({ alert_id, trigger_id, revision })
-      .update({ revision: revision + 1, state_json: JSON.stringify(state) });
+      .update({
+        revision: revision + 1,
+        state_json: JSON.stringify(state),
+        next_retry_at: state.retry?.nextAt ? Math.floor(Date.parse(state.retry.nextAt) / 1000) : null,
+      });
     return count === 1;
+  }
+
+  /** Indexed due rows only; active and resolved alerts share the same retry clock. */
+  async getDueAttentionRetries(
+    now: number,
+    triggerIds: number[],
+  ): Promise<Array<{ alert_id: number; trigger_id: number }>> {
+    return this.knex("alert_notification_state")
+      .select("alert_id", "trigger_id")
+      .whereIn("trigger_id", triggerIds)
+      .where("next_retry_at", "<=", now);
   }
 
   // ============ Monitor Alerts ============

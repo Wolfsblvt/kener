@@ -10,6 +10,7 @@ import { UpdateMaintenanceEventStatuses } from "../controllers/maintenanceContro
 import { IsExplicitApiObservation } from "../services/explicitObservation.js";
 import { checkObservationAlerts } from "../queues/alertingQueue.js";
 import { GetMinuteStartNowTimestampUTC } from "../tool.js";
+import { retryAttentionDeliveries } from "../notification/attentionDispatch.js";
 
 let appSchedulerQueue: Queue | null = null;
 let worker: Worker | null = null;
@@ -76,6 +77,12 @@ const addWorker = () => {
 
     //we have to update the maintenances events also
     await UpdateMaintenanceEventStatuses();
+
+    try {
+      await retryAttentionDeliveries();
+    } catch {
+      console.error("Attention retry configuration unavailable; persisted recovery remains accessible");
+    }
 
     // Reuse this scheduler rather than add a watcher/job. No synthetic history/healthy samples are written.
     const now = GetMinuteStartNowTimestampUTC();
