@@ -5,9 +5,9 @@
 # Multi-stage, multi-variant (Alpine / Debian) Dockerfile
 #
 # Build:
-#   docker build -t kener .                          # Alpine (default)
-#   docker build -t kener --build-arg VARIANT=debian . # Debian Slim
-#   docker build -t kener --build-arg WITH_DOCS=true .  # Include docs
+#   node wolf/build-image.mjs --tag kener                    # Debian Slim
+#   node wolf/build-image.mjs --tag kener --variant alpine   # Alpine
+#   node wolf/build-image.mjs --tag kener --with-docs         # Include docs
 #
 # Run:
 #   docker run -d -p 3000:3000 \
@@ -24,6 +24,7 @@ ARG NODE_VERSION=24.22.3
 ARG VARIANT=alpine
 ARG WITH_DOCS=false
 ARG KENER_BASE_PATH=
+ARG SOURCE_REVISION
 
 # =============================================================================
 #  STAGE 1 — BUILDER  (installs deps, compiles native modules, builds app)
@@ -54,6 +55,10 @@ FROM builder-${VARIANT} AS builder
 ENV NPM_CONFIG_LOGLEVEL=error
 
 WORKDIR /app
+
+ARG SOURCE_REVISION
+RUN test "${#SOURCE_REVISION}" -eq 40 && \
+    case "$SOURCE_REVISION" in *[!0-9a-f]*) exit 1 ;; esac
 
 ARG KENER_BASE_PATH
 ENV KENER_BASE_PATH=${KENER_BASE_PATH}
@@ -141,6 +146,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ---------- Selected variant ----------
 FROM final-${VARIANT} AS final
+
+ARG SOURCE_REVISION
+LABEL org.opencontainers.image.revision=${SOURCE_REVISION} \
+      org.opencontainers.image.source="https://github.com/Wolfsblvt/kener"
 
 ARG PORT=3000
 ARG KENER_BASE_PATH=
