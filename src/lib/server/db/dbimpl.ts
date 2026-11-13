@@ -91,6 +91,9 @@ class DbImpl {
   retireStanding!: MonitorsRepository["retireStanding"];
 
   // ============ Alerts ============
+  getAttentionState!: AlertsRepository["getAttentionState"];
+  ensureAttentionState!: AlertsRepository["ensureAttentionState"];
+  saveAttentionState!: AlertsRepository["saveAttentionState"];
   insertAlert!: AlertsRepository["insertAlert"];
   alertExistsIncident!: AlertsRepository["alertExistsIncident"];
   alertExists!: AlertsRepository["alertExists"];
@@ -482,6 +485,9 @@ class DbImpl {
     this.getActiveAlert = this.alerts.getActiveAlert.bind(this.alerts);
     this.getMonitorAlertsPaginated = this.alerts.getMonitorAlertsPaginated.bind(this.alerts);
     this.getMonitorAlertsCount = this.alerts.getMonitorAlertsCount.bind(this.alerts);
+    this.getAttentionState = this.alerts.getAttentionState.bind(this.alerts);
+    this.ensureAttentionState = this.alerts.ensureAttentionState.bind(this.alerts);
+    this.saveAttentionState = this.alerts.saveAttentionState.bind(this.alerts);
     this.updateAlertStatus = this.alerts.updateAlertStatus.bind(this.alerts);
     this.incrementAlertHealthChecks = this.alerts.incrementAlertHealthChecks.bind(this.alerts);
     this.addIncidentNumberToAlert = this.alerts.addIncidentNumberToAlert.bind(this.alerts);

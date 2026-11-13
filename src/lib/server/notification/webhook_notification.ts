@@ -44,7 +44,19 @@ export default async function send(
   variables: Record<string, string | number | boolean>,
   webhookURL: string,
   headers?: string,
+  composedText?: string,
 ) {
+  // The opted-in sender owns message meaning. Keep only the existing recipient/
+  // routing envelope, before template expansion can corrupt a quoted old sentence.
+  if (composedText !== undefined) {
+    const body = JSON.parse(webhookBody);
+    if (!body || typeof body !== "object" || Array.isArray(body) || !body.chat_id)
+      throw new Error("attention_recipient_missing");
+    body.text = "";
+    delete body.parse_mode;
+    delete body.entities;
+    webhookBody = JSON.stringify(body);
+  }
   // Process trigger meta for environment secrets
   let envSecrets = GetRequiredSecrets(webhookBody + headers + webhookURL);
 
@@ -60,7 +72,22 @@ export default async function send(
   const headersObj = parseWebhookHeaders(headers, envSecrets);
 
   // Render the webhook body with Mustache (disable HTML escaping for JSON/plain text)
-  const renderedBody = Mustache.render(webhookBody, { ...variables }, {}, { escape: (text) => text });
+  let renderedBody = Mustache.render(webhookBody, { ...variables }, {}, { escape: (text) => text });
+  if (composedText !== undefined) {
+    const url = new URL(webhookURL);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "api.telegram.org" ||
+      url.port ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash ||
+      !/^\/bot[^/]+\/sendMessage$/.test(url.pathname)
+    )
+      throw new Error("attention_channel_unqualified");
+    renderedBody = JSON.stringify({ ...JSON.parse(renderedBody), text: composedText });
+  }
 
   let responseStatus: number | undefined;
   try {
@@ -81,7 +108,23 @@ export default async function send(
     }
 
     const responseData = await response.text();
-    return { success: true, status: response.status, data: responseData };
+    let attentionSubmitted = false;
+    if (composedText !== undefined) {
+      try {
+        const submitted = JSON.parse(renderedBody);
+        const receipt = JSON.parse(responseData);
+        attentionSubmitted =
+          receipt.ok === true &&
+          Number.isSafeInteger(receipt.result?.message_id) &&
+          receipt.result.message_id > 0 &&
+          Number.isSafeInteger(receipt.result?.date) &&
+          String(receipt.result?.chat?.id) === String(submitted.chat_id) &&
+          receipt.result?.text === composedText;
+      } catch {
+        /* An unusable body cannot establish message submission. */
+      }
+    }
+    return { success: true, status: response.status, data: responseData, attentionSubmitted };
   } catch (error) {
     return { error: `Error sending webhook: ${describeError(error)}`, status: responseStatus, details: error };
   }

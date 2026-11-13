@@ -5,6 +5,12 @@ description: "Use Mustache variables to customize webhook, chat, and email alert
 
 Templates define the body and subject sent by triggers. Kener uses Mustache rendering.
 
+## Operated composition {#operated-composition}
+
+An operator may explicitly opt a trigger into the fork's `KENER_ATTENTION_CONFIG` binding. For that selected STATUS DOWN/NO_DATA Telegram webhook, the pinned composer supplies the complete message and notification decision; the stored template keeps its recipient/routing envelope but its text, HTML parse mode and entities are replaced by plain composed text. Normal triggers keep the templates below and creation/resolution behavior. Native alert evaluations also check selected due waits/follow-up; diagnostic HTTP acceptance is distinct from a qualified Message receipt.
+
+The bearer-authenticated `/api/v4/attention/<alert_id>/<trigger_id>` route reads current sender state. PATCH with current `revision` and an attributable `reference` carries `action: facts` or exact-attempt `action: reconcile`; pickup alone never sends. POST `action: evaluate` with current revision explicitly re-evaluates after reconciliation, including a held recovery. Read before retrying an interrupted effect. Neither provider submission nor operator reconciliation proves device/human receipt. The fork's `wolf/qualification/attention-composer.md` defines the complete input and recovery contract; the operated composer/declaration remain outside this public source.
+
 ## Canonical alert variables {#canonical-alert-variables}
 
 | Variable                         |

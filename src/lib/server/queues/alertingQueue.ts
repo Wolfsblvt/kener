@@ -125,6 +125,7 @@ async function sendAlertNotifications(
   templateSiteVars: SiteDataForNotification,
   monitorTag?: string,
   monitorName?: string,
+  attentionOnly = false,
 ): Promise<void> {
   const triggers = await GetTriggersByMonitorAlertConfigId(monitor_alerts_configured.id);
   await dispatchAlertNotifications(
@@ -136,6 +137,7 @@ async function sendAlertNotifications(
       name: monitorName || monitorTag || "unknown",
     },
     triggers,
+    attentionOnly,
   );
 }
 
@@ -231,6 +233,17 @@ const addWorker = () => {
             templateSiteVars,
             monitor_tag,
             monitor_name,
+          );
+        } else {
+          // Reuse native evaluation cadence for declared waits/follow-up. Legacy
+          // triggers keep their creation/resolution-only behavior.
+          await sendAlertNotifications(
+            activeAlert,
+            monitor_alerts_configured,
+            templateSiteVars,
+            monitor_tag,
+            monitor_name,
+            true,
           );
         }
       } else {

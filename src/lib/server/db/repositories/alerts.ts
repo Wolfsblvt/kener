@@ -1,10 +1,39 @@
 import { BaseRepository, type TriggerFilter, type CountResult } from "./base.js";
 import type { MonitorAlert, MonitorAlertInsert, TriggerRecord, TriggerRecordInsert } from "../../types/db.js";
+import type { AttentionRecord, AttentionState } from "../../notification/attentionTypes.js";
 
 /**
  * Repository for alerts and triggers operations
  */
 export class AlertsRepository extends BaseRepository {
+  /** Read without creating state; operator GET never changes a sender record. */
+  async getAttentionState(alert_id: number, trigger_id: number): Promise<AttentionRecord | undefined> {
+    const result = await this.knex("alert_notification_state").where({ alert_id, trigger_id }).first();
+    return result ? { revision: Number(result.revision), state: JSON.parse(result.state_json) } : undefined;
+  }
+
+  /** Initialise once; a concurrent creator never replaces valued receipts. */
+  async ensureAttentionState(alert_id: number, trigger_id: number): Promise<AttentionRecord> {
+    await this.knex("alert_notification_state")
+      .insert({ alert_id, trigger_id, revision: 0, state_json: JSON.stringify({ facts: {}, messages: [] }) })
+      .onConflict(["alert_id", "trigger_id"])
+      .ignore();
+    return (await this.getAttentionState(alert_id, trigger_id))!;
+  }
+
+  /** CAS covers dispatch claims, completion and operator changes; no lock spans HTTP. */
+  async saveAttentionState(
+    alert_id: number,
+    trigger_id: number,
+    revision: number,
+    state: AttentionState,
+  ): Promise<boolean> {
+    const count = await this.knex("alert_notification_state")
+      .where({ alert_id, trigger_id, revision })
+      .update({ revision: revision + 1, state_json: JSON.stringify(state) });
+    return count === 1;
+  }
+
   // ============ Monitor Alerts ============
 
   async insertAlert(data: MonitorAlertInsert): Promise<number[]> {

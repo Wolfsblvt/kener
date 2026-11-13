@@ -7,6 +7,7 @@ import sendWebhook, { InvalidWebhookHeadersError, parseWebhookHeaders } from "./
 import sendSlack from "./slack_notification.js";
 import sendDiscord from "./discord_notification.js";
 import { recordNotificationEvidence, type NotificationEvidence } from "./notificationEvidence.js";
+import { dispatchAttention } from "./attentionDispatch.js";
 
 /** Reduced notification boundary error; provider/configuration exceptions never escape as its cause. */
 export class NotificationDispatchError extends Error {
@@ -54,6 +55,7 @@ export async function sendAlertNotifications(
   site: SiteDataForNotification,
   monitor: { tag: string; name: string },
   triggers: TriggerRecord[],
+  attentionOnly = false,
 ): Promise<void> {
   const variables = { ...alertToVariables(config, alert, site, monitor.tag, monitor.name), ...site };
   let aborted = false;
@@ -80,6 +82,8 @@ export async function sendAlertNotifications(
     let started = false;
     const start = performance.now();
     try {
+      if (await dispatchAttention(alert, config, trigger, variables)) continue;
+      if (attentionOnly) continue;
       const meta = JSON.parse(trigger.trigger_meta) as TriggerMeta;
       if (channel === "unsupported") {
         evidence.reason = "unsupported_channel";
