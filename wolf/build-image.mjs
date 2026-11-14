@@ -1,9 +1,10 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { closeSync, mkdirSync, mkdtempSync, openSync, realpathSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-// The label identifies committed build inputs, so refuse a dirty or different context.
+// Refuse the wrong repository or uncommitted source, then archive the captured commit.
 const root = fileURLToPath(new URL("../", import.meta.url));
 const { values } = parseArgs({
   options: {
@@ -23,23 +24,35 @@ if (git("status", "--porcelain")) {
   throw new Error("Commit or preserve working changes before building a revision-labelled image.");
 }
 const revision = git("rev-parse", "HEAD");
-const result = spawnSync(
-  "docker",
-  [
-    "build",
-    "--platform",
-    "linux/amd64",
-    "--build-arg",
-    `SOURCE_REVISION=${revision}`,
-    "--build-arg",
-    `VARIANT=${values.variant}`,
-    "--build-arg",
-    `WITH_DOCS=${values["with-docs"]}`,
-    "--tag",
-    values.tag,
-    root,
-  ],
-  { stdio: "inherit", windowsHide: true },
-);
-if (result.error) throw result.error;
-process.exitCode = result.status ?? 1;
+const contextHome = join(root, "artifacts", "build");
+mkdirSync(contextHome, { recursive: true });
+const contextDirectory = mkdtempSync(join(contextHome, "image-context-"));
+let context;
+try {
+  const archive = join(contextDirectory, "source.tar");
+  git("archive", "--format=tar", `--output=${archive}`, revision);
+  context = openSync(archive, "r");
+  const result = spawnSync(
+    "docker",
+    [
+      "build",
+      "--platform",
+      "linux/amd64",
+      "--build-arg",
+      `SOURCE_REVISION=${revision}`,
+      "--build-arg",
+      `VARIANT=${values.variant}`,
+      "--build-arg",
+      `WITH_DOCS=${values["with-docs"]}`,
+      "--tag",
+      values.tag,
+      "-",
+    ],
+    { stdio: [context, "inherit", "inherit"], windowsHide: true },
+  );
+  if (result.error) throw result.error;
+  process.exitCode = result.status ?? 1;
+} finally {
+  if (context !== undefined) closeSync(context);
+  rmSync(contextDirectory, { recursive: true, force: true });
+}

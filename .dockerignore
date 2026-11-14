@@ -23,6 +23,22 @@ dist
 .env.*
 !.env.example
 
+# Local configuration and runtime data (also excluded from direct Docker builds)
+config/*.yaml
+config/static
+db
+database
+uploads
+static/uploads
+static/kener
+src/lib/.kener
+package
+scratch
+.superpowers
+.okgit
+.vitest-attachments
+*.save
+
 # OS files
 .DS_Store
 Thumbs.db
